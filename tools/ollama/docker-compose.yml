@@ -1,0 +1,33 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ${OLLAMA_CONTAINER_NAME:-ollama_container}
+    gpus:
+      - driver: nvidia
+        device_ids:
+          - "${OLLAMA_GPU_ID:-1}"
+        capabilities:
+          - gpu
+    environment:
+      OLLAMA_HOST: ${OLLAMA_HOST:-0.0.0.0:11434}
+    networks:
+      - ollama_net
+
+  proxy:
+    build:
+      context: ./proxy
+    container_name: ${OLLAMA_PROXY_CONTAINER_NAME:-ollama_proxy}
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_PROXY_USER: ${OLLAMA_PROXY_USER}
+      OLLAMA_PROXY_PASSWORD: ${OLLAMA_PROXY_PASSWORD}
+      OLLAMA_UPSTREAM: ${OLLAMA_UPSTREAM:-ollama:11434}
+    ports:
+      - "${OLLAMA_BIND:-11434:8080}"
+    networks:
+      - ollama_net
+
+networks:
+  ollama_net:
+    name: ${OLLAMA_NETWORK:-ocss}

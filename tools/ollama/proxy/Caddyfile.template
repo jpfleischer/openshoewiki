@@ -1,0 +1,7 @@
+:8080 {
+    basicauth * {
+        __OLLAMA_PROXY_USER__ __OLLAMA_PROXY_PASSWORD_HASH__
+    }
+
+    reverse_proxy __OLLAMA_UPSTREAM__
+}
