@@ -1,0 +1,26 @@
+<?php
+
+return [
+	'sneakers' => 'Sneakers',
+	'boots' => 'Boots',
+	'ankle-boots' => 'Ankle Boots',
+	'knee-high-boots' => 'Knee-High Boots',
+	'loafers' => 'Loafers',
+	'oxfords' => 'Oxfords',
+	'derbies' => 'Derbies',
+	'heels' => 'Heels',
+	'pumps' => 'Pumps',
+	'sandals' => 'Sandals',
+	'clogs' => 'Clogs',
+	'mules' => 'Mules',
+	'flats' => 'Flats',
+	'mary-janes' => 'Mary Janes',
+	'ballet-flats' => 'Ballet Flats',
+	'platforms' => 'Platforms',
+	'wedges' => 'Wedges',
+	'slippers' => 'Slippers',
+	'athletic-shoes' => 'Athletic Shoes',
+	'dress-shoes' => 'Dress Shoes',
+	'work-shoes' => 'Work Shoes',
+	'other' => 'Other',
+];

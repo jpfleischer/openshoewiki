@@ -1,0 +1,13 @@
+FROM php:8.2-alpine
+
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
+RUN apk add --no-cache curl nodejs npm bash \
+	&& install-php-extensions intl PDO_PGSQL zip
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /srv
+
+COPY . /srv
+RUN /srv/dev.sh "SETUP"
+ENTRYPOINT [ "/bin/bash", "-c", "/srv/dev.sh" ]

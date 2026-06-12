@@ -1,0 +1,1 @@
+This directory may contain example assets and branding carried over from the upstream project. Those files should be replaced before publishing a public fork, and should not be assumed to be licensed for reuse.

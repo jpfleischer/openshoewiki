@@ -1,0 +1,63 @@
+# This will set up the web container and a postgres container it can connect to.
+# The dev web container will run `npm install` and `npm run development` on startup, to pick up
+# any changes to JS or SCSS files.
+
+# The db container uses mounted storage, so it's not necessary to rerun imports and migrations every time.
+# Postgres will look in /dev/initdb the first time the container is started and run any sql or shell scripts in there.
+
+services:
+  db:
+    container_name: sakura-db
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: lolibrary
+      POSTGRES_USER: postgres
+      POSTGRES_DB: library
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "8001:5432"
+    volumes:
+      - ./dev:/var/lib/postgresql/data:rw
+      - ./dev/initdb:/docker-entrypoint-initdb.d
+  web:
+    container_name: sakura-web
+    image: ghcr.io/lolibrary/sakura-dev:latest
+    build:
+      context: .
+      dockerfile: ./dev-dockerfile
+    environment:
+      - APP_DEBUG=true
+      - APP_KEY=insecurerandomkey111111111111111
+      - CACHE_DRIVER=file
+      - DB_CONNECTION=pgsql
+      - DB_DATABASE=library
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=lolibrary
+      - DB_HOST=db
+      - AWS_DEFAULT_REGION=nyc3
+      - AWS_BUCKET=lolibrary
+      - AWS_URL="http://localhost:3000"
+      - AWS_CDN_URL="http://localhost:3000"
+      - APP_URL="http://localhost:3000"
+      - HTTPS_OFF=1
+      - SESSION_DRIVER=file
+    volumes:
+      - ./app:/srv/app
+      - ./database:/srv/database
+      - ./resources:/srv/resources
+      - ./routes:/srv/routes
+      - ./tests:/srv/tests
+      - ./storage:/srv/storage
+      - ./config:/srv/config
+      - ./public:/srv/public
+      - ./composer.json:/srv/composer.json
+      - ./composer.lock:/srv/composer.lock
+      - ./dev.sh:/srv/dev.sh
+      - ./server.php:/srv/server.php
+      - ./package.json:/srv/package.json
+      - ./yarn.lock:/srv/yarn.lock
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
