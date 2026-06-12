@@ -2,14 +2,10 @@ services:
   ollama:
     image: ollama/ollama
     container_name: ${OLLAMA_CONTAINER_NAME:-ollama_container}
-    gpus:
-      - driver: nvidia
-        device_ids:
-          - "${OLLAMA_GPU_ID:-1}"
-        capabilities:
-          - gpu
+    runtime: nvidia
     environment:
       OLLAMA_HOST: ${OLLAMA_HOST:-0.0.0.0:11434}
+      NVIDIA_VISIBLE_DEVICES: ${OLLAMA_GPU_ID:-1}
     networks:
       - ollama_net
 

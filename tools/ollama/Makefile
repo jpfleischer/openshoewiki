@@ -17,7 +17,7 @@ COMPOSE := OLLAMA_CONTAINER_NAME=$(OLLAMA_CONTAINER_NAME) OLLAMA_PROXY_CONTAINER
 
 yep: up
 
-up: down build check-env
+up: check-env down build
 	$(COMPOSE) up -d
 	sleep 3
 	$(COMPOSE) exec ollama ollama pull $(OLLAMA_MODEL)

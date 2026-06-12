@@ -93,3 +93,4 @@ The script asks the model for JSON containing fields like:
 - The current frontend build stack in this repo is unrelated to this Ollama tooling.
 - This setup exposes the proxy on the machine's LAN-visible port, not the raw Ollama container.
 - Raw Ollama stays on the Docker network and is only reachable by the proxy container.
+- GPU access uses `runtime: nvidia` plus `NVIDIA_VISIBLE_DEVICES`, which is more compatible with older Docker Compose installs than the newer `gpus:` field.
