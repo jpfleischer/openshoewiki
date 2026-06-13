@@ -34,6 +34,7 @@ The proxy container will:
 - hash `OLLAMA_PROXY_PASSWORD` at startup
 - render its own runtime `Caddyfile`
 - start Caddy with that generated config
+- answer browser-extension CORS preflight requests for the OpenShoeWiki extractor
 
 Defaults:
 
@@ -94,3 +95,4 @@ The script asks the model for JSON containing fields like:
 - This setup exposes the proxy on the machine's LAN-visible port, not the raw Ollama container.
 - Raw Ollama stays on the Docker network and is only reachable by the proxy container.
 - GPU access uses `runtime: nvidia` plus `NVIDIA_VISIBLE_DEVICES`, which is more compatible with older Docker Compose installs than the newer `gpus:` field.
+- The proxy currently allows the Firefox extension origin `moz-extension://openshoewiki-extractor@openshoewiki.local` for `POST` and `OPTIONS` requests with `Authorization` and `Content-Type` headers.

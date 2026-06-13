@@ -1,7 +1,25 @@
 :8080 {
-    basicauth * {
-        __OLLAMA_PROXY_USER__ __OLLAMA_PROXY_PASSWORD_HASH__
-    }
+    route {
+        @preflight method OPTIONS
+        handle @preflight {
+            header Access-Control-Allow-Origin "moz-extension://openshoewiki-extractor@openshoewiki.local"
+            header Access-Control-Allow-Methods "POST, OPTIONS"
+            header Access-Control-Allow-Headers "Authorization, Content-Type"
+            header Access-Control-Max-Age "86400"
+            respond "" 204
+        }
 
-    reverse_proxy __OLLAMA_UPSTREAM__
+        header {
+            Access-Control-Allow-Origin "moz-extension://openshoewiki-extractor@openshoewiki.local"
+            Vary "Origin"
+        }
+
+        request_header -Origin
+
+        basic_auth * {
+            __OLLAMA_PROXY_USER__ __OLLAMA_PROXY_PASSWORD_HASH__
+        }
+
+        reverse_proxy __OLLAMA_UPSTREAM__
+    }
 }

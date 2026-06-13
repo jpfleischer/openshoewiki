@@ -1,6 +1,6 @@
 services:
   ollama:
-    image: ollama/ollama
+    image: ollama/ollama:0.12.0
     container_name: ${OLLAMA_CONTAINER_NAME:-ollama_container}
     runtime: nvidia
     environment:
