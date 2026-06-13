@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenShoeWiki Extractor</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="app-page">
+  <main class="app">
+    <header class="hero">
+      <p class="eyebrow">OpenShoeWiki</p>
+      <h1>Page Extractor</h1>
+      <p class="lede">This view stays open in its own tab so you can switch pages without losing the tool.</p>
+      <p id="sourcePage" class="status"></p>
+    </header>
+
+    <section class="panel">
+      <h2>Connection</h2>
+      <label class="field">
+        <span>Base URL</span>
+        <input id="baseUrl" type="url" placeholder="http://your-ollama-host:11434">
+      </label>
+      <label class="field">
+        <span>Username</span>
+        <input id="username" type="text" placeholder="Username">
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input id="password" type="password" placeholder="Basic auth password">
+      </label>
+      <label class="field">
+        <span>Model</span>
+        <input id="model" type="text" placeholder="qwen2.5:32b">
+      </label>
+      <div class="actions">
+        <button id="saveSettings" type="button" class="secondary">Save Settings</button>
+      </div>
+      <p id="settingsStatus" class="status"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Extraction</h2>
+      <p class="lede">The extension uses a built-in structured shoe extraction prompt. Only the connection settings and model are configurable.</p>
+      <div class="actions">
+        <button id="analyzePage" type="button" class="primary">Analyze Source Page</button>
+      </div>
+      <p id="runStatus" class="status"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Result</h2>
+      <div class="actions mb-2">
+        <button id="copyResponse" type="button" class="secondary">Copy Normalized JSON</button>
+      </div>
+      <p id="copyStatus" class="status mb-2"></p>
+      <textarea id="result" rows="20" readonly placeholder="The model response will appear here."></textarea>
+    </section>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

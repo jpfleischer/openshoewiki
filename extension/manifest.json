@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "OpenShoeWiki Extractor",
+  "version": "0.1.0",
+  "description": "Extract shoe product details from the current page and send them to a configured Ollama host.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "openshoewiki-extractor@openshoewiki.local"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "OpenShoeWiki Extractor"
+  }
+}

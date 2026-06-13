@@ -1,0 +1,142 @@
+:root {
+  color-scheme: light;
+  --bg: #f3efe7;
+  --panel: #fffdf9;
+  --ink: #1f1b17;
+  --muted: #6d6257;
+  --line: #d8ccb8;
+  --accent: #935b22;
+  --accent-strong: #734214;
+  --shadow: 0 12px 28px rgba(57, 34, 12, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 420px;
+  background:
+    radial-gradient(circle at top left, #fff6e8 0, transparent 38%),
+    linear-gradient(180deg, #efe6d8 0%, var(--bg) 100%);
+  color: var(--ink);
+  font: 14px/1.4 "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+.app-page {
+  min-width: 0;
+}
+
+.app {
+  padding: 16px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.hero {
+  margin-bottom: 14px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hero h1,
+.panel h2 {
+  margin: 0 0 8px;
+}
+
+.lede,
+.status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.panel {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.field span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+input,
+textarea,
+button {
+  width: 100%;
+  font: inherit;
+}
+
+input,
+textarea {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--ink);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.primary:hover {
+  background: var(--accent-strong);
+}
+
+.secondary {
+  background: #ece2d3;
+  color: var(--ink);
+}
+
+.secondary:hover {
+  background: #e2d4c0;
+}
+
+#result {
+  min-height: 220px;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 12px;
+}
