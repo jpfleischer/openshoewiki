@@ -9,6 +9,10 @@
                 <p class="text-muted mb-0">
                     Add a shoe record for review. Phase 1 writes directly into the archive and marks the pair as pending.
                 </p>
+                <div class="mt-3">
+                    <button type="button" id="paste-extracted-json" class="btn btn-outline-primary">Paste Extracted JSON</button>
+                </div>
+                <div id="paste-extracted-status" class="small text-muted mt-2"></div>
             </div>
 
             @if ($errors->any())
@@ -230,10 +234,6 @@
         var preview = document.getElementById('image-paste-preview');
         var previewImage = document.getElementById('image-paste-preview-img');
 
-        if (! pasteZone || ! imageInput || ! window.DataTransfer) {
-            return;
-        }
-
         var activePreviewUrl = null;
 
         var updatePreview = function (file) {
@@ -255,41 +255,264 @@
             emptyState.classList.add('d-none');
         };
 
-        imageInput.addEventListener('change', function () {
-            updatePreview(imageInput.files[0] || null);
-        });
-
-        pasteZone.addEventListener('click', function () {
-            pasteZone.focus();
-        });
-
-        pasteZone.addEventListener('paste', function (event) {
-            var items = Array.from((event.clipboardData || {}).items || []);
-            var imageItem = items.find(function (item) {
-                return item.type && item.type.indexOf('image/') === 0;
+        if (pasteZone && imageInput && window.DataTransfer) {
+            imageInput.addEventListener('change', function () {
+                updatePreview(imageInput.files[0] || null);
             });
 
-            if (! imageItem) {
+            pasteZone.addEventListener('click', function () {
+                pasteZone.focus();
+            });
+
+            pasteZone.addEventListener('paste', function (event) {
+                var items = Array.from((event.clipboardData || {}).items || []);
+                var imageItem = items.find(function (item) {
+                    return item.type && item.type.indexOf('image/') === 0;
+                });
+
+                if (! imageItem) {
+                    return;
+                }
+
+                var file = imageItem.getAsFile();
+
+                if (! file) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                var extension = (file.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+                var pastedFile = new File([file], 'clipboard-image.' + extension, { type: file.type });
+                var dataTransfer = new DataTransfer();
+
+                dataTransfer.items.add(pastedFile);
+                imageInput.files = dataTransfer.files;
+
+                updatePreview(pastedFile);
+            });
+        }
+
+        var importButton = document.getElementById('paste-extracted-json');
+        var importStatus = document.getElementById('paste-extracted-status');
+
+        var setImportStatus = function (message, isError) {
+            if (! importStatus) {
                 return;
             }
 
-            var file = imageItem.getAsFile();
+            importStatus.textContent = message;
+            importStatus.classList.toggle('text-danger', !! isError);
+            importStatus.classList.toggle('text-muted', ! isError);
+        };
 
-            if (! file) {
-                return;
+        var normalizeLabel = function (value) {
+            return String(value || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+        };
+
+        var setChosenValue = function (element, value) {
+            if (! element || ! value) {
+                return false;
             }
 
-            event.preventDefault();
+            var wanted = normalizeLabel(value);
+            var matchedOption = Array.from(element.options).find(function (option) {
+                return normalizeLabel(option.textContent) === wanted;
+            });
 
-            var extension = (file.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
-            var pastedFile = new File([file], 'clipboard-image.' + extension, { type: file.type });
-            var dataTransfer = new DataTransfer();
+            if (! matchedOption) {
+                return false;
+            }
 
-            dataTransfer.items.add(pastedFile);
-            imageInput.files = dataTransfer.files;
+            element.value = matchedOption.value;
+            $(element).trigger('chosen:updated').trigger('change');
+            return true;
+        };
 
-            updatePreview(pastedFile);
-        });
+        var setChosenMultiValue = function (element, values) {
+            if (! element || ! Array.isArray(values) || ! values.length) {
+                return 0;
+            }
+
+            var wanted = values.map(normalizeLabel);
+            var matchedValues = Array.from(element.options)
+                .filter(function (option) {
+                    var label = normalizeLabel(option.textContent);
+
+                    return wanted.some(function (value) {
+                        return value === label || value.indexOf(label) !== -1 || label.indexOf(value) !== -1;
+                    });
+                })
+                .map(function (option) {
+                    return option.value;
+                });
+
+            if (! matchedValues.length) {
+                return 0;
+            }
+
+            $(element).val(matchedValues).trigger('chosen:updated').trigger('change');
+            return matchedValues.length;
+        };
+
+        var setAttributeByLabel = function (labelNeedles, value) {
+            if (! value) {
+                return false;
+            }
+
+            var labels = Array.from(document.querySelectorAll('label[for^="attribute_"]'));
+            var normalizedValue = String(value).trim();
+            var matchedLabel = labels.find(function (label) {
+                var normalized = normalizeLabel(label.textContent);
+                return labelNeedles.some(function (needle) {
+                    return normalized.indexOf(needle) !== -1;
+                });
+            });
+
+            if (! matchedLabel) {
+                return false;
+            }
+
+            var input = document.getElementById(matchedLabel.getAttribute('for'));
+            if (! input) {
+                return false;
+            }
+
+            input.value = normalizedValue;
+            return true;
+        };
+
+        var parsePrice = function (value) {
+            if (! value) {
+                return null;
+            }
+
+            var match = String(value).match(/(\d+(?:\.\d+)?)/);
+            return match ? match[1] : null;
+        };
+
+        var inferCurrency = function (value) {
+            if (! value) {
+                return null;
+            }
+
+            var raw = String(value).trim().toUpperCase();
+
+            if (raw.indexOf('$') !== -1 || raw.indexOf('USD') === 0) {
+                return 'usd';
+            }
+
+            if (raw.indexOf('CNY') === 0 || raw.indexOf('RMB') === 0) {
+                return 'cny';
+            }
+
+            if (raw.indexOf('JPY') === 0) {
+                return 'jpy';
+            }
+
+            if (raw.indexOf('EUR') === 0) {
+                return 'eur';
+            }
+
+            if (raw.indexOf('GBP') === 0) {
+                return 'gbp';
+            }
+
+            return null;
+        };
+
+        var buildNotes = function (data) {
+            var sections = [];
+
+            if (data.evidence) {
+                sections.push('Imported extraction evidence:');
+                Object.keys(data.evidence).forEach(function (key) {
+                    if (data.evidence[key]) {
+                        sections.push(key + ': ' + data.evidence[key]);
+                    }
+                });
+            }
+
+            sections.push('');
+            sections.push('Imported extracted JSON:');
+            sections.push(JSON.stringify(data, null, 2));
+
+            return sections.join('\n').trim();
+        };
+
+        var importExtractedData = function (payload) {
+            var data = payload && payload.response ? payload.response : payload;
+
+            if (! data || typeof data !== 'object' || Array.isArray(data)) {
+                throw new Error('Clipboard JSON does not look like an extracted shoe payload.');
+            }
+
+            var pairName = data.product_name || data.english_name || '';
+            var brand = data.brand || '';
+            var productType = data.product_type || '';
+            var sku = data.sku_style_code || '';
+            var price = data.price || '';
+            var materials = Array.isArray(data.materials) ? data.materials.join(', ') : (data.materials || '');
+            var heelHeight = data.heel_height || '';
+
+            if (pairName) {
+                document.getElementById('english_name').value = pairName;
+            }
+
+            if (sku) {
+                document.getElementById('product_number').value = sku;
+            }
+
+            if (price) {
+                var parsedPrice = parsePrice(price);
+                if (parsedPrice) {
+                    document.getElementById('price').value = parsedPrice;
+                }
+
+                var inferredCurrency = inferCurrency(price);
+                if (inferredCurrency) {
+                    var currencySelect = document.getElementById('currency');
+                    currencySelect.value = inferredCurrency;
+                    $(currencySelect).trigger('chosen:updated').trigger('change');
+                }
+            }
+
+            var matchedBrand = setChosenValue(document.getElementById('brand_id'), brand);
+            var matchedCategories = setChosenMultiValue(document.getElementById('category_ids'), [productType]);
+
+            setAttributeByLabel(['heel height'], heelHeight);
+            setAttributeByLabel(['upper material', 'material'], materials);
+
+            var notesField = document.getElementById('notes');
+            var importedNotes = buildNotes(data);
+            notesField.value = notesField.value ? notesField.value + '\n\n' + importedNotes : importedNotes;
+
+            setImportStatus(
+                'Imported extracted JSON. ' +
+                (matchedBrand ? 'Brand matched. ' : 'Brand needs review. ') +
+                (matchedCategories ? 'Category matched.' : 'Category may need manual selection.'),
+                false
+            );
+        };
+
+        if (importButton && navigator.clipboard && navigator.clipboard.readText) {
+            importButton.addEventListener('click', async function () {
+                try {
+                    var raw = await navigator.clipboard.readText();
+
+                    if (! raw) {
+                        throw new Error('Clipboard is empty.');
+                    }
+
+                    importExtractedData(JSON.parse(raw));
+                } catch (error) {
+                    setImportStatus(error.message || 'Could not import clipboard JSON.', true);
+                }
+            });
+        }
     });
 </script>
 @endsection
