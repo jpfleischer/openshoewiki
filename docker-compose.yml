@@ -37,9 +37,9 @@ services:
       - DB_HOST=db
       - AWS_DEFAULT_REGION=nyc3
       - AWS_BUCKET=openshoewiki-local
-      - AWS_URL="http://localhost:3000"
-      - AWS_CDN_URL="http://localhost:3000"
-      - APP_URL="http://localhost:3000"
+      - AWS_URL=${APP_URL}
+      - AWS_CDN_URL=${APP_URL}
+      - APP_URL=${APP_URL}
       - HTTPS_OFF=1
       - SESSION_DRIVER=database
       - SESSION_LIFETIME=43200

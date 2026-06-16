@@ -1,13 +1,25 @@
-FROM php:8.2-alpine
+FROM debian:bookworm
 
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
-RUN apk add --no-cache curl nodejs npm bash \
-	&& install-php-extensions intl PDO_PGSQL zip
-
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN apt-get update && apt-get install -y \
+	bash \
+	curl \
+	git \
+	unzip \
+	nodejs \
+	npm \
+	composer \
+	php8.2-cli \
+	php8.2-pgsql \
+	php8.2-intl \
+	php8.2-zip \
+	php8.2-mbstring \
+	php8.2-xml \
+	php8.2-curl \
+	php8.2-bcmath \
+	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /srv
 
 COPY . /srv
-RUN /srv/dev.sh "SETUP"
-ENTRYPOINT [ "/bin/bash", "-c", "/srv/dev.sh" ]
+RUN chmod +x /srv/dev.sh && /bin/bash /srv/dev.sh "SETUP"
+ENTRYPOINT [ "/bin/bash", "-c", "/bin/bash /srv/dev.sh" ]

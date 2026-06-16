@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Composers;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -27,6 +28,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+            URL::forceRootUrl(config('app.url'));
+        }
+
         View::composer('components.categories', Composers\Categories::class);
         View::composer('components.brands', Composers\Brands::class);
         View::composer('components.features', Composers\Features::class);

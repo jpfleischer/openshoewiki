@@ -19,6 +19,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
@@ -156,10 +157,16 @@ class ItemResource extends Resource
 
                             return new HtmlString("<a href=\"{$url}\" target=\"_blank\" rel=\"noopener\"><img src=\"{$url}\" alt=\"Main item image\" style=\"max-height: 8rem; border-radius: 0.5rem;\"></a>");
                         }),
-                    TextInput::make('image')
-                        ->label('Main Image Path')
-                        ->maxLength(255)
-                        ->helperText('Temporary bridge until direct uploads are rebuilt in Filament.'),
+                    FileUpload::make('image')
+                        ->label('Main Image')
+                        ->image()
+                        ->disk('public')
+                        ->directory('items')
+                        ->visibility('public')
+                        ->imagePreviewHeight('8rem')
+                        ->maxSize(5120)
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                        ->helperText('Upload the main image for this item.'),
                     Repeater::make('images')
                         ->label('Additional Images')
                         ->schema([
@@ -167,10 +174,16 @@ class ItemResource extends Resource
                                 ->default(fn (): string => Str::random(16)),
                             Hidden::make('layout')
                                 ->default('image'),
-                            TextInput::make('attributes.image')
-                                ->label('Image Path')
-                                ->required()
-                                ->maxLength(255),
+                            FileUpload::make('attributes.image')
+                                ->label('Image')
+                                ->image()
+                                ->disk('public')
+                                ->directory('items/gallery')
+                                ->visibility('public')
+                                ->imagePreviewHeight('8rem')
+                                ->maxSize(5120)
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                ->required(),
                         ])
                         ->default([])
                         ->columns(1)

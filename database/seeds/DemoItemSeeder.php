@@ -26,7 +26,8 @@ class DemoItemSeeder extends Seeder
                 'level' => User::REGULAR,
             ])->save();
         } else {
-            $submitter = User::create([
+            $submitter = User::forceCreate([
+                'id' => uuid4(),
                 'username' => 'testuser',
                 'name' => 'testuser',
                 'level' => User::REGULAR,
