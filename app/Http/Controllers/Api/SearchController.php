@@ -81,12 +81,12 @@ class SearchController extends Base
                 $item->makeVisible('image');
             }
 
-            if ($item->brand !== null) {
+            if ($item->brand !== null && $item->brand->image !== null) {
                 $item->brand->image = Storage::cloud()->url($item->brand->image);
                 $item->brand->makeVisible('image');
             }
 
-            if ($item->category !== null) {
+            if ($item->category !== null && $item->category->image !== null) {
                 $item->category->image = Storage::cloud()->url($item->category->image);
                 $item->category->makeVisible('image');
             }

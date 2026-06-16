@@ -16,6 +16,7 @@ class AttributeSeeder extends Seeder
      */
     protected static $content = [
         'Heel Height',
+        'Platform Height',
         'Shaft Height',
         'Calf Circumference',
         'Toe Shape',

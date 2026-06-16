@@ -2,6 +2,7 @@
 
 return [
 	'heel-height' => 'Heel Height',
+	'platform-height' => 'Platform Height',
 	'shaft-height' => 'Shaft Height',
 	'calf-circumference' => 'Calf Circumference',
 	'toe-shape' => 'Toe Shape',

@@ -327,8 +327,13 @@
                 return false;
             }
 
-            element.value = matchedOption.value;
-            $(element).trigger('chosen:updated').trigger('change');
+            if (element.tomselect) {
+                element.tomselect.setValue(matchedOption.value, true);
+            } else {
+                element.value = matchedOption.value;
+                $(element).trigger('change');
+            }
+
             return true;
         };
 
@@ -354,7 +359,12 @@
                 return 0;
             }
 
-            $(element).val(matchedValues).trigger('chosen:updated').trigger('change');
+            if (element.tomselect) {
+                element.tomselect.setValue(matchedValues, true);
+            } else {
+                $(element).val(matchedValues).trigger('change');
+            }
+
             return matchedValues.length;
         };
 
@@ -457,6 +467,7 @@
             var price = data.price || '';
             var materials = Array.isArray(data.materials) ? data.materials.join(', ') : (data.materials || '');
             var heelHeight = data.heel_height || '';
+            var platformHeight = data.platform_height || '';
 
             if (pairName) {
                 document.getElementById('english_name').value = pairName;
@@ -475,8 +486,12 @@
                 var inferredCurrency = inferCurrency(price);
                 if (inferredCurrency) {
                     var currencySelect = document.getElementById('currency');
-                    currencySelect.value = inferredCurrency;
-                    $(currencySelect).trigger('chosen:updated').trigger('change');
+                    if (currencySelect.tomselect) {
+                        currencySelect.tomselect.setValue(inferredCurrency, true);
+                    } else {
+                        currencySelect.value = inferredCurrency;
+                        $(currencySelect).trigger('change');
+                    }
                 }
             }
 
@@ -484,6 +499,7 @@
             var matchedCategories = setChosenMultiValue(document.getElementById('category_ids'), [productType]);
 
             setAttributeByLabel(['heel height'], heelHeight);
+            setAttributeByLabel(['platform height'], platformHeight);
             setAttributeByLabel(['upper material', 'material'], materials);
 
             var notesField = document.getElementById('notes');

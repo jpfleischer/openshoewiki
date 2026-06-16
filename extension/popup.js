@@ -12,7 +12,7 @@ const EXTRACTION_PROMPT = [
     "If a field is missing, use null.",
     "Ignore customer reviews, related products, bundles, social media, and size-chart boilerplate unless they directly describe this exact product.",
     "Use short exact evidence snippets from the page for each non-null field.",
-    'Return exactly this JSON shape: {"product_name":null,"brand":null,"product_type":null,"heel_height":null,"materials":[],"sku_style_code":null,"price":null,"evidence":{"product_name":null,"brand":null,"product_type":null,"heel_height":null,"materials":null,"sku_style_code":null,"price":null}}'
+    'Return exactly this JSON shape: {"product_name":null,"brand":null,"product_type":null,"heel_height":null,"platform_height":null,"materials":[],"sku_style_code":null,"price":null,"evidence":{"product_name":null,"brand":null,"product_type":null,"heel_height":null,"platform_height":null,"materials":null,"sku_style_code":null,"price":null}}'
 ].join(" ");
 
 const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS);
@@ -266,15 +266,106 @@ function inferBrand(pageData, modelData) {
   return explicit || null;
 }
 
+function formatNormalizedNumber(value) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+
+  return value.toFixed(3).replace(/\.?0+$/, "");
+}
+
+function parseMeasurementNumber(raw) {
+  if (!raw) {
+    return null;
+  }
+
+  const value = raw.trim();
+  const unicodeFractions = {
+    "¼": 0.25,
+    "½": 0.5,
+    "¾": 0.75,
+    "⅐": 1 / 7,
+    "⅑": 1 / 9,
+    "⅒": 0.1,
+    "⅓": 1 / 3,
+    "⅔": 2 / 3,
+    "⅕": 0.2,
+    "⅖": 0.4,
+    "⅗": 0.6,
+    "⅘": 0.8,
+    "⅙": 1 / 6,
+    "⅚": 5 / 6,
+    "⅛": 0.125,
+    "⅜": 0.375,
+    "⅝": 0.625,
+    "⅞": 0.875
+  };
+
+  const mixedFractionMatch = value.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixedFractionMatch) {
+    const whole = Number(mixedFractionMatch[1]);
+    const numerator = Number(mixedFractionMatch[2]);
+    const denominator = Number(mixedFractionMatch[3]);
+
+    if (denominator) {
+      return whole + numerator / denominator;
+    }
+  }
+
+  const fractionMatch = value.match(/^(\d+)\/(\d+)$/);
+  if (fractionMatch) {
+    const numerator = Number(fractionMatch[1]);
+    const denominator = Number(fractionMatch[2]);
+
+    if (denominator) {
+      return numerator / denominator;
+    }
+  }
+
+  const unicodeMixedMatch = value.match(/^(\d+)\s*([¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])$/);
+  if (unicodeMixedMatch) {
+    return Number(unicodeMixedMatch[1]) + unicodeFractions[unicodeMixedMatch[2]];
+  }
+
+  if (unicodeFractions[value] != null) {
+    return unicodeFractions[value];
+  }
+
+  const decimal = Number(value.replace(/,/g, ""));
+  return Number.isFinite(decimal) ? decimal : null;
+}
+
 function normalizeMeasurement(value) {
   if (!value) {
     return null;
   }
 
-  return value
+  value = value
+    .replace(/(\d)\s*"/g, "$1 in")
+    .replace(/\b(platform height|heel height)\b/gi, "");
+
+  const raw = value
+    .replace(/[–—]/g, "-")
     .replace(/\b(inches|inch)\b/gi, "in")
+    .replace(/\b(centimeters|centimetres|centimeter|centimetre)\b/gi, "cm")
+    .replace(/\b(millimeters|millimetres|millimeter|millimetre)\b/gi, "mm")
     .replace(/\s+/g, " ")
     .trim();
+
+  const measurementMatch = raw.match(/(\d(?:[\d\s/.,¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞-]*\d|[\d\s/.,¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]*))\s*(in|cm|mm)\b/i);
+  if (!measurementMatch) {
+    return raw;
+  }
+
+  const parsedNumber = parseMeasurementNumber(measurementMatch[1].replace(/^-+/, "").trim());
+  if (!Number.isFinite(parsedNumber)) {
+    return raw;
+  }
+
+  const normalizedNumber = formatNormalizedNumber(parsedNumber);
+  const unit = measurementMatch[2].toLowerCase();
+
+  return normalizedNumber ? `${normalizedNumber} ${unit}` : raw;
 }
 
 function normalizePrice(value) {
@@ -330,6 +421,33 @@ function inferHeelHeight(pageData, modelData) {
   return null;
 }
 
+function inferPlatformHeight(pageData, modelData) {
+  const direct = firstNonEmpty(
+    modelData?.platform_height,
+    modelData?.["Platform Height"],
+    modelData?.platformHeight
+  );
+
+  if (direct) {
+    return direct;
+  }
+
+  const joined = [
+    pageData.visibleText,
+    ...flattenTextParts(modelData?.features),
+    ...flattenTextParts(modelData)
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const match = joined.match(/platform height:\s*([^\n;]+)/i);
+  if (match) {
+    return normalizeMeasurement((match[1] || "").trim());
+  }
+
+  return null;
+}
+
 function buildNormalizedResponse(pageData, modelData) {
   const materials = normalizeMaterials([
     pageData.signals.materials,
@@ -349,6 +467,7 @@ function buildNormalizedResponse(pageData, modelData) {
     brand: inferBrand(pageData, modelData),
     product_type: inferProductType(pageData, modelData),
     heel_height: inferHeelHeight(pageData, modelData),
+    platform_height: inferPlatformHeight(pageData, modelData),
     materials,
     sku_style_code: firstNonEmpty(
       pageData.signals.sku,
@@ -378,6 +497,11 @@ function buildNormalizedResponse(pageData, modelData) {
           findEvidenceSnippet(pageData.visibleText, [/Heel height:\s*[^\n;]+/i, /\d+\s+\d\/\d\s*inch Ardern heel/i])
         ) ||
         null,
+      platform_height:
+        normalizeMeasurement(
+          findEvidenceSnippet(pageData.visibleText, [/Platform height:\s*[^\n;]+/i])
+        ) ||
+        null,
       materials:
         findEvidenceSnippet(pageData.visibleText, [/Built from [^\n.]*leather/i, /\bSendal leather\b/i]) || null,
       sku_style_code:
@@ -395,6 +519,7 @@ function buildNormalizedResponse(pageData, modelData) {
   normalized.brand = normalized.brand || null;
   normalized.product_type = normalized.product_type || null;
   normalized.heel_height = normalizeMeasurement(normalized.heel_height) || null;
+  normalized.platform_height = normalizeMeasurement(normalized.platform_height) || null;
   normalized.sku_style_code = normalized.sku_style_code || null;
   normalized.price = normalizePrice(normalized.price) || null;
 
