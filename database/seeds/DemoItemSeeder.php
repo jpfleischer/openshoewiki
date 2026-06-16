@@ -10,7 +10,6 @@ use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class DemoItemSeeder extends Seeder
 {
@@ -18,28 +17,24 @@ class DemoItemSeeder extends Seeder
     {
         $submitter = User::query()
             ->where('username', 'testuser')
-            ->orWhere('email', 'testuser@example.com')
             ->first();
 
         if ($submitter) {
             $submitter->forceFill([
                 'username' => 'testuser',
-                'email' => 'testuser@example.com',
                 'name' => 'testuser',
                 'level' => User::REGULAR,
             ])->save();
         } else {
             $submitter = User::create([
                 'username' => 'testuser',
-                'email' => 'testuser@example.com',
-                'password' => bcrypt(Str::random(64)),
                 'name' => 'testuser',
                 'level' => User::REGULAR,
             ]);
         }
 
         $publisher = User::query()
-            ->where('email', config('site.admin.email') ?? 'admin@example.com')
+            ->where('username', config('site.admin.username') ?? 'admin')
             ->first();
 
         $items = [

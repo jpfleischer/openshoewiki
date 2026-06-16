@@ -20,8 +20,6 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use UnitEnum;
 
 class UserResource extends Resource
@@ -45,24 +43,19 @@ class UserResource extends Resource
                         TextInput::make('name')
                             ->required()
                             ->maxLength(255),
-                        TextInput::make('email')
-                            ->email()
-                            ->required()
-                            ->maxLength(254)
-                            ->unique(table: 'users', column: 'email', ignoreRecord: true),
                         TextInput::make('username')
                             ->required()
                             ->minLength(3)
                             ->maxLength(40)
                             ->regex('/^[^-_][0-9a-z_-]+$/u')
                             ->unique(table: 'users', column: 'username', ignoreRecord: true),
-                        TextInput::make('password')
-                            ->password()
-                            ->revealable()
-                            ->required(fn (string $operation): bool => $operation === 'create')
-                            ->rule(Password::min(8))
-                            ->dehydrated(fn (?string $state): bool => filled($state))
-                            ->dehydrateStateUsing(fn (string $state): string => Hash::make($state)),
+                        TextInput::make('discord_username')
+                            ->label('Discord Username')
+                            ->maxLength(255),
+                        TextInput::make('discord_id')
+                            ->label('Discord ID')
+                            ->maxLength(255)
+                            ->disabled(),
                     ])->columns(2),
                 Section::make('Authentication')
                     ->schema([
@@ -95,10 +88,10 @@ class UserResource extends Resource
                 TextColumn::make('username')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('email')
+                TextColumn::make('discord_username')
+                    ->label('Discord')
                     ->searchable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
                 TextColumn::make('role')
                     ->label('Level')
                     ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('level', $direction)),
@@ -129,5 +122,10 @@ class UserResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->can('viewAny', User::class) ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
     }
 }

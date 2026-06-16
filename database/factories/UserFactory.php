@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 class UserFactory extends Factory
 {
@@ -18,10 +17,6 @@ class UserFactory extends Factory
             'id' => uuid4(),
             'name' => $this->faker->name,
             'username' => $username,
-            'email' => 'bikeshed+'.$username.'@lolibrary.org',
-            'password' => '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm',
-            'remember_token' => Str::random(10),
-            'email_verified_at' => now('UTC')->subHour(),
             'banned' => false,
             'level' => User::REGULAR,
         ];
@@ -70,10 +65,4 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function unverified()
-    {
-        return $this->state([
-            'email_verified_at' => null,
-        ]);
-    }
 }

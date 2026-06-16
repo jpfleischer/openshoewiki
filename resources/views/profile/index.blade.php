@@ -14,6 +14,10 @@
 
 <form id="nav-profile" method="POST" action="{{ route('profile') }}">
     @csrf
+    <div class="alert alert-light border">
+        <strong>Discord account</strong><br>
+        OpenShoeWiki signs you in through Discord and does not store a Discord email address.
+    </div>
     <div class="form-group">
         <label for="profile-name">{{ __('ui.auth.name') }}</label>
         <input type="text" class="form-control" id="profile-name" placeholder="Enter a name" value="{{ old('name') ?? $user->name }}" name="name">
@@ -21,21 +25,6 @@
     <div class="form-group">
         <label for="profile-username">{{ __('ui.auth.username') }}</label>
         <input type="text" id="profile-username" class="form-control" value="{{ $user->username }}" name="username">
-    </div>
-    <div class="form-group">
-        <label for="profile-email">{{ __('ui.auth.email') }}</label>
-        <input type="email" class="form-control" id="profile-email" aria-describedby="emailHelp" placeholder="Enter an email" value="{{ old('email') ?? $user->email }}" name="email">
-        <small id="emailHelp" class="form-text text-muted">{{ __('ui.auth.email_txt') }}</small>
-    </div>
-
-    <div class="form-group">
-        <label for="profile-password">{{ __('ui.auth.pw') }}</label>
-        <input type="password" class="form-control" id="profile-password" placeholder="{{ __('ui.auth.pw') }}" name="password">
-    </div>
-    <div class="form-group">
-        <label for="profile-password-confirm">{{ __('ui.auth.pw_confirm') }}</label>
-        <input type="password" class="form-control" id="profile-password-confirm" placeholder="{{ __('ui.auth.pw') }}" name="password_confirmation">
-        <small class="form-text text-muted">{{ __('ui.auth.pw_no_change') }}</small>
     </div>
     <div class="form-group form-check">
         <input type="checkbox" class="form-check-input" name="public_wishlist" id="public-wishlist" value="1" @if ($user->public_wishlist) checked @endif/>

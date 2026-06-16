@@ -9,26 +9,20 @@ use App\Models\Traits\HasUuid;
 use App\Models\Traits\Wishlist;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
 use Laravel\Passport\HasApiTokens;
 
 /**
  * A user of this application.
  *
- * @property string $email          The user's email.
  * @property string $name           The user's name.
  * @property string $username       The user's login username.
- * @property string $remember_token A strong random number that allows the user to use "remember me" sessions.
  *
  * @property int  $level    The user's level (permissions).
  * @property bool $banned   If the user is banned or not.
- * @property bool $verified Whether or not the user's email has been verified.
- *
  * @property \App\Models\Image $image The user's profile image.
  * @property string $image_id         The user's profile image ID.
  *
@@ -37,7 +31,7 @@ use Laravel\Passport\HasApiTokens;
  * @property \App\Models\Item[]|\Illuminate\Database\Eloquent\Collection $closet   The {@link \App\Item items} this user owns.
  * @property \App\Models\Post[]|\Illuminate\Database\Eloquent\Collection $posts    The posts this user has created.
  */
-class User extends Authenticatable implements FilamentUser, MustVerifyEmail
+class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasApiTokens, HasUuid, DateHandling, Wishlist, Closet, AccessLevels;
 
@@ -71,8 +65,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     protected $fillable = [
         'name',
         'username',
-        'email',
-        'password',
+        'discord_id',
+        'discord_username',
+        'discord_avatar',
     ];
 
     /**
@@ -83,7 +78,6 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     protected $casts = [
         'banned' => 'boolean',
         'level' => 'integer',
-        'email_verified_at' => 'datetime',
     ];
 
     /**
@@ -104,8 +98,6 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
      * @var array
      */
     protected $hidden = [
-        'password',
-        'remember_token',
     ];
 
     /**
@@ -116,6 +108,43 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function items()
     {
         return $this->hasMany(Item::class);
+    }
+
+    public function contributionEvents(): HasMany
+    {
+        return $this->hasMany(ContributionEvent::class);
+    }
+
+    public function candidateEdits(): HasMany
+    {
+        return $this->hasMany(ItemCandidateEdit::class);
+    }
+
+    public function candidateEditVotes(): HasMany
+    {
+        return $this->hasMany(ItemCandidateEditVote::class);
+    }
+
+    public function contributionPoints(): int
+    {
+        if (array_key_exists('contribution_points', $this->attributes)) {
+            return (int) $this->attributes['contribution_points'];
+        }
+
+        return (int) $this->contributionEvents()
+            ->where('status', ContributionEvent::STATUS_AWARDED)
+            ->sum('points');
+    }
+
+    public function contributionCount(): int
+    {
+        if (array_key_exists('contribution_count', $this->attributes)) {
+            return (int) $this->attributes['contribution_count'];
+        }
+
+        return (int) $this->contributionEvents()
+            ->where('status', ContributionEvent::STATUS_AWARDED)
+            ->count();
     }
 
     /**
@@ -168,18 +197,6 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function profile()
     {
         return $this->hasOne(Profile::class);
-    }
-
-    /**
-     * Scope a query to email address.
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $email
-     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
-     */
-    public function scopeEmail(Builder $query, string $email)
-    {
-        return $query->where(DB::raw('lower(email)'), mb_strtolower($email));
     }
 
     /**

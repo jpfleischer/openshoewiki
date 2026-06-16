@@ -83,17 +83,13 @@ if (! function_exists('userify')) {
 
 if (! function_exists('user')) {
     /**
-     * Get a user by email, slug or uuid.
+     * Get a user by username or uuid.
      *
      * @param string $id
      * @return \App\Models\User|null
      */
     function user($id)
     {
-        if (validator(['id' => $id], ['id' => 'required|email'])->passes()) {
-            return User::where(DB::raw('lower(email)'), mb_strtolower($id))->first();
-        }
-
         if (Ramsey\Uuid\Uuid::isValid($id)) {
             return User::find($id);
         }
