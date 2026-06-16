@@ -23,6 +23,15 @@
                         @include('components.items.closet')
                     </div>
                 </div>
+                @if ($item->published() || (auth()->user() && (auth()->user()->junior() || $item->user_id === auth()->id())))
+                <div class="row p-0 mx-0 my-3">
+                    <div class="col p-1 list-group text-center small">
+                    <a class="btn btn-outline-primary" href="{{ route('items.history', $item) }}">
+                        <i data-feather="clock" class="icon-fw"></i> Revision History
+                    </a>
+                    </div>
+                </div>
+                @endif
                 @if (auth()->user() && ! $item->published() && (auth()->user()->junior() || $item->user_id === auth()->id()))
                 <div class="row p-0 mx-0 my-3">
                     <div class="col p-1 list-group text-center small">
@@ -49,7 +58,7 @@
                 @elseif (auth()->user())
                 <div class="row p-0 mx-0 my-3">
                     <div class="col p-1 list-group text-center small">
-                    <a class="btn btn-outline-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSeuCoQbM7cXwF2OAkljtlmALwdgUNCAkKGEDeQHomCySMhStQ/viewform?usp=pp_url&entry.1974464960={{ $item->url }}">
+                    <a class="btn btn-outline-primary" href="{{ route('items.candidate-edits.create', $item) }}">
                         <i data-feather="edit-2" class="icon-fw"></i>  {{ __('ui.item.suggest') }}
                     </a>
                     </div>

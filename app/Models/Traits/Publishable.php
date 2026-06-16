@@ -4,6 +4,8 @@ namespace App\Models\Traits;
 
 use App\Models\Item;
 use App\Models\User;
+use App\Services\Contributions\ContributionPointService;
+use App\Services\Items\ItemRevisionService;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 
 trait Publishable
@@ -34,6 +36,23 @@ trait Publishable
         $this->publisher()->associate($user);
         $this->published_at = now();
         $this->save();
+
+        $revision = app(ItemRevisionService::class)->capture(
+            $this,
+            $user,
+            'published',
+            'Published item',
+            ['source' => 'status-change']
+        );
+
+        if ($user !== null && $revision !== null) {
+            app(ContributionPointService::class)->awardForItemPublish(
+                $user,
+                $this,
+                $revision,
+                ['source' => 'status-change']
+            );
+        }
     }
 
     /**
@@ -45,6 +64,14 @@ trait Publishable
     {
         $this->status = static::DRAFT;
         $this->save();
+
+        app(ItemRevisionService::class)->capture(
+            $this,
+            auth()->user(),
+            'unpublished',
+            'Moved item back to draft',
+            ['source' => 'status-change']
+        );
     }
 
     /**
@@ -56,6 +83,14 @@ trait Publishable
     {
         $this->status = static::PENDING;
         $this->save();
+
+        app(ItemRevisionService::class)->capture(
+            $this,
+            auth()->user(),
+            'status_changed',
+            'Marked item as pending review',
+            ['source' => 'status-change', 'status' => static::PENDING]
+        );
     }
 
     /**
@@ -67,6 +102,14 @@ trait Publishable
     {
         $this->status = static::CHANGES_REQUESTED;
         $this->save();
+
+        app(ItemRevisionService::class)->capture(
+            $this,
+            auth()->user(),
+            'status_changed',
+            'Marked item as changes requested',
+            ['source' => 'status-change', 'status' => static::CHANGES_REQUESTED]
+        );
     }
 
     /**

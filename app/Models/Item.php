@@ -33,6 +33,7 @@ use NumberFormatter;
  * @property \App\Models\Color[]|\Illuminate\Database\Eloquent\Collection $colors     The {@link \App\Models\Color colorways} this Item comes in (e.g. Black).
  * @property \App\Models\Feature[]|\Illuminate\Database\Eloquent\Collection $features   The {@link \App\Models\Feature features} of this item (e.g. Back Shirring).
  * @property \App\Models\Attribute[]|\Illuminate\Database\Eloquent\Collection $attributes The {@link \App\Models\Attribute custom attributes} on this Item.
+ * @property \App\Models\ItemRevision[]|\Illuminate\Database\Eloquent\Collection $revisions The saved history snapshots for this Item.
  * @property \App\Models\User[]|\Illuminate\Database\Eloquent\Collection $stargazers The {@link \App\Models\User users} who want to own this Item.
  * @property \App\Models\User[]|\Illuminate\Database\Eloquent\Collection $owners     The {@link \App\Models\Attribute users} who own this Item.
  *
@@ -262,6 +263,21 @@ class Item extends Model
     public function categories()
     {
         return $this->belongsToMany('App\Models\Category');
+    }
+
+    public function revisions()
+    {
+        return $this->hasMany(ItemRevision::class)->orderByDesc('revision_number');
+    }
+
+    public function contributionEvents()
+    {
+        return $this->hasMany(ContributionEvent::class);
+    }
+
+    public function candidateEdits()
+    {
+        return $this->hasMany(ItemCandidateEdit::class)->latest();
     }
 
     public function wishlist() {

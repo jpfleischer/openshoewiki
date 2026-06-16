@@ -245,4 +245,20 @@ class ItemPolicy
     {
         return $this->update($user, $item);
     }
+
+    /**
+     * Can a user view revision history for an item?
+     */
+    public function viewRevisionHistory(User $user, Item $item)
+    {
+        return $this->update($user, $item);
+    }
+
+    /**
+     * Can a user restore an item revision?
+     */
+    public function restoreRevision(User $user, Item $item)
+    {
+        return $this->publish($user, $item);
+    }
 }

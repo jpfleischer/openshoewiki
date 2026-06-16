@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\Post;
+use App\Services\Contributions\ContributionLeaderboardService;
 
 class HomeController extends Controller
 {
@@ -18,6 +19,9 @@ class HomeController extends Controller
      */
     public function homepage()
     {
+        $leaderboard = app(ContributionLeaderboardService::class)->topContributors(10);
+        $communityStats = app(ContributionLeaderboardService::class)->communityStats();
+
         // todo: make this a static ::homepage() method
         $posts = Post::query()
             ->with('user')
@@ -38,7 +42,7 @@ class HomeController extends Controller
             ->take(15)
             ->get();
 
-        return view('homepage', compact('posts', 'brands', 'categories', 'recent'));
+        return view('homepage', compact('posts', 'brands', 'categories', 'recent', 'leaderboard', 'communityStats'));
     }
 
     public function set_lang(Request $request)

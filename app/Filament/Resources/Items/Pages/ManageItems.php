@@ -4,10 +4,11 @@ namespace App\Filament\Resources\Items\Pages;
 
 use App\Filament\Resources\Items\ItemResource;
 use App\Models\Item;
+use App\Services\Contributions\ContributionPointService;
+use App\Services\Items\ItemRevisionService;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
 
 class ManageItems extends ManageRecords
 {
@@ -26,16 +27,7 @@ class ManageItems extends ManageRecords
         /** @var Item $record */
         $record = $this->getRecord();
 
-        $data['category_ids'] = $record->categories()->pluck('categories.id')->all();
-        $data['feature_ids'] = $record->features()->pluck('features.id')->all();
-        $data['color_ids'] = $record->colors()->pluck('colors.id')->all();
-        $data['tag_ids'] = $record->tags()->pluck('tags.id')->all();
-        $data['attribute_values'] = $record->attributes->map(fn ($attribute): array => [
-            'attribute_id' => $attribute->id,
-            'value' => $attribute->pivot->value,
-        ])->values()->all();
-
-        return $data;
+        return ItemResource::mutateItemFormDataBeforeFill($record, $data);
     }
 
     protected function handleRecordCreation(array $data): Model
@@ -47,6 +39,22 @@ class ManageItems extends ManageRecords
         $record->save();
 
         $this->syncRelationships($record, $relationshipData);
+        $revision = app(ItemRevisionService::class)->capture(
+            $record,
+            auth()->user(),
+            'created',
+            'Created via Filament',
+            ['source' => 'filament']
+        );
+
+        if ($revision !== null && auth()->user() !== null) {
+            app(ContributionPointService::class)->awardForItemCreation(
+                auth()->user(),
+                $record,
+                $revision,
+                ['source' => 'filament']
+            );
+        }
 
         return $record;
     }
@@ -54,64 +62,6 @@ class ManageItems extends ManageRecords
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         /** @var Item $record */
-        $relationshipData = $this->extractRelationshipData($data);
-
-        if ($record->published()) {
-            unset($data['brand_id']);
-            $relationshipData['category_ids'] = $record->categories()->pluck('categories.id')->all();
-        }
-
-        $record->fill($data);
-        $record->save();
-
-        $this->syncRelationships($record, $relationshipData, ! $record->published());
-
-        return $record;
-    }
-
-    protected function extractRelationshipData(array &$data): array
-    {
-        $keys = [
-            'category_ids',
-            'feature_ids',
-            'color_ids',
-            'tag_ids',
-            'attribute_values',
-        ];
-
-        $relationships = Arr::only($data, $keys);
-
-        foreach ($keys as $key) {
-            unset($data[$key]);
-        }
-
-        return $relationships;
-    }
-
-    protected function syncRelationships(Item $record, array $relationships, bool $syncCategory = true): void
-    {
-        $categoryIds = array_values(array_filter($relationships['category_ids'] ?? []));
-
-        if ($syncCategory) {
-            $record->categories()->sync($categoryIds);
-
-            if ($categoryIds !== []) {
-                $record->category_id = $categoryIds[0];
-                $record->save();
-            }
-        }
-
-        $record->features()->sync(array_values(array_filter($relationships['feature_ids'] ?? [])));
-        $record->colors()->sync(array_values(array_filter($relationships['color_ids'] ?? [])));
-        $record->tags()->sync(array_values(array_filter($relationships['tag_ids'] ?? [])));
-
-        $attributeValues = collect($relationships['attribute_values'] ?? [])
-            ->filter(fn (array $row): bool => filled($row['attribute_id'] ?? null) && filled($row['value'] ?? null))
-            ->mapWithKeys(fn (array $row): array => [
-                $row['attribute_id'] => ['value' => $row['value']],
-            ])
-            ->all();
-
-        $record->attributes()->sync($attributeValues);
+        return ItemResource::updateItemRecord($record, $data);
     }
 }

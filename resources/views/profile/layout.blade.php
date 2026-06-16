@@ -10,6 +10,18 @@
             <div class="text-center m-4">
                 {{ $user->username }}
             </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                        <span class="text-muted">Contribution Points</span>
+                        <strong>{{ number_format($user->contributionPoints()) }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Scored Events</span>
+                        <strong>{{ number_format($user->contributionCount()) }}</strong>
+                    </div>
+                </div>
+            </div>
 
             <div class="list-group">
                     @if ($isOwner)

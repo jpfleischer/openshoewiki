@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Items;
 
+use App\Filament\Resources\Items\Pages\ItemHistory;
 use App\Filament\Resources\Items\Pages\ManageItems;
 use App\Models\Attribute;
 use App\Models\Brand;
@@ -10,6 +11,8 @@ use App\Models\Color;
 use App\Models\Feature;
 use App\Models\Item;
 use App\Models\Tag;
+use App\Services\Contributions\ContributionPointService;
+use App\Services\Items\ItemRevisionService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -31,6 +34,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -90,14 +95,32 @@ class ItemResource extends Resource
                         ->options(static::getYearOptions())
                         ->searchable()
                         ->native(false),
+                    Placeholder::make('brand_locked_display')
+                        ->label('Brand')
+                        ->content(fn (?Item $record): string => $record?->brand?->name ?? 'No brand assigned')
+                        ->visible(fn (?Item $record): bool => (bool) $record?->published())
+                        ->helperText('Brand stays locked once a record is published.'),
+                    Hidden::make('brand_id')
+                        ->default(fn (?Item $record): ?string => $record?->brand_id)
+                        ->visible(fn (?Item $record): bool => (bool) $record?->published())
+                        ->dehydrated(),
                     Select::make('brand_id')
                         ->label('Brand')
                         ->options(static::getBrandOptions())
                         ->required()
                         ->searchable()
+                        ->preload()
                         ->native(false)
-                        ->disabled(fn (?Item $record): bool => (bool) $record?->published())
-                        ->helperText(fn (?Item $record): ?string => $record?->published() ? 'Brand stays locked once a record is published.' : null),
+                        ->visible(fn (?Item $record): bool => ! $record?->published()),
+                    Placeholder::make('categories_locked_display')
+                        ->label('Categories')
+                        ->content(fn (?Item $record): string => $record && $record->categories->isNotEmpty() ? $record->categories->pluck('name')->implode(', ') : 'No categories assigned')
+                        ->visible(fn (?Item $record): bool => (bool) $record?->published())
+                        ->helperText('Categories stay locked once a record is published.'),
+                    Hidden::make('category_ids')
+                        ->default(fn (?Item $record): array => $record?->categories()->pluck('categories.id')->all() ?? [])
+                        ->visible(fn (?Item $record): bool => (bool) $record?->published())
+                        ->dehydrated(),
                     Select::make('category_ids')
                         ->label('Categories')
                         ->options(static::getCategoryOptions())
@@ -105,9 +128,9 @@ class ItemResource extends Resource
                         ->required()
                         ->minItems(1)
                         ->searchable()
+                        ->preload()
                         ->native(false)
-                        ->disabled(fn (?Item $record): bool => (bool) $record?->published())
-                        ->helperText(fn (?Item $record): ?string => $record?->published() ? 'Categories stay locked once a record is published.' : null),
+                        ->visible(fn (?Item $record): bool => ! $record?->published()),
                 ])->columns(2),
             Section::make('Pricing')
                 ->schema([
@@ -310,12 +333,21 @@ class ItemResource extends Resource
                     ->query(fn (Builder $query, array $data): Builder => static::applyStatusFilter($query, $data['value'] ?? null)),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->mutateRecordDataUsing(fn (array $data, Item $record): array => static::mutateItemFormDataBeforeFill($record, $data))
+                    ->using(function (Item $record, array $data): void {
+                        static::updateItemRecord($record, $data);
+                    }),
                 Action::make('view_public')
                     ->label('View')
                     ->icon(Heroicon::OutlinedEye)
                     ->url(fn (Item $record): string => $record->url)
                     ->openUrlInNewTab(),
+                Action::make('history')
+                    ->label('History')
+                    ->icon(Heroicon::OutlinedClock)
+                    ->visible(fn (Item $record): bool => auth()->user()?->can('viewRevisionHistory', $record) ?? false)
+                    ->url(fn (Item $record): string => static::getUrl('history', ['record' => $record])),
                 static::makePublishAction(),
                 static::makeUnpublishAction(),
                 static::makePendingAction(),
@@ -334,6 +366,7 @@ class ItemResource extends Resource
     {
         return [
             'index' => ManageItems::route('/'),
+            'history' => ItemHistory::route('/{record}/history'),
         ];
     }
 
@@ -585,5 +618,136 @@ class ItemResource extends Resource
     public static function canCreate(): bool
     {
         return auth()->user()?->can('create', Item::class) ?? false;
+    }
+
+    public static function mutateItemFormDataBeforeFill(Item $record, array $data): array
+    {
+        $data['category_ids'] = $record->categories()->pluck('categories.id')->all();
+        $data['feature_ids'] = $record->features()->pluck('features.id')->all();
+        $data['color_ids'] = $record->colors()->pluck('colors.id')->all();
+        $data['tag_ids'] = $record->tags()->pluck('tags.id')->all();
+        $data['attribute_values'] = $record->attributes->map(fn ($attribute): array => [
+            'attribute_id' => $attribute->id,
+            'value' => $attribute->pivot->value,
+        ])->values()->all();
+
+        return $data;
+    }
+
+    public static function updateItemRecord(Item $record, array $data): Item
+    {
+        $relationshipData = static::extractItemRelationshipData($data);
+
+        if (! filled($data['price'] ?? null)) {
+            $data['price'] = $record->price;
+        }
+
+        if (! filled($data['currency'] ?? null)) {
+            $data['currency'] = $record->currency;
+        }
+
+        if (! filled($data['image'] ?? null)) {
+            $data['image'] = $record->image;
+        }
+
+        if (! array_key_exists('images', $data) || empty($data['images'])) {
+            $data['images'] = $record->images;
+        }
+
+        foreach (['notes', 'internal_notes'] as $field) {
+            if (array_key_exists($field, $data) && static::normalizeEditorText($data[$field]) === static::normalizeEditorText($record->{$field})) {
+                $data[$field] = $record->{$field};
+            }
+        }
+
+        if ($record->published()) {
+            $data['brand_id'] = $record->brand_id;
+            $relationshipData['category_ids'] = $record->categories()->pluck('categories.id')->all();
+        }
+
+        $record->fill($data);
+        $record->save();
+
+        static::syncItemRelationships($record, $relationshipData, ! $record->published());
+        $revision = app(ItemRevisionService::class)->capture(
+            $record,
+            auth()->user(),
+            'updated',
+            'Updated via Filament',
+            ['source' => 'filament']
+        );
+
+        if ($revision !== null && auth()->user() !== null) {
+            app(ContributionPointService::class)->awardForItemUpdate(
+                auth()->user(),
+                $record,
+                $revision,
+                ['source' => 'filament']
+            );
+        }
+
+        return $record;
+    }
+
+    protected static function normalizeEditorText(?string $value): string
+    {
+        if (! filled($value)) {
+            return '';
+        }
+
+        $value = str_replace(['<br>', '<br/>', '<br />', '</p>'], "\n", $value);
+        $value = strip_tags($value);
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = preg_replace("/\r\n|\r/", "\n", $value) ?? $value;
+        $value = preg_replace("/[ \t]+/", ' ', $value) ?? $value;
+        $value = preg_replace("/\n{3,}/", "\n\n", $value) ?? $value;
+
+        return trim($value);
+    }
+
+    public static function extractItemRelationshipData(array &$data): array
+    {
+        $keys = [
+            'category_ids',
+            'feature_ids',
+            'color_ids',
+            'tag_ids',
+            'attribute_values',
+        ];
+
+        $relationships = Arr::only($data, $keys);
+
+        foreach ($keys as $key) {
+            unset($data[$key]);
+        }
+
+        return $relationships;
+    }
+
+    public static function syncItemRelationships(Item $record, array $relationships, bool $syncCategory = true): void
+    {
+        $categoryIds = array_values(array_filter($relationships['category_ids'] ?? []));
+
+        if ($syncCategory) {
+            $record->categories()->sync($categoryIds);
+
+            if ($categoryIds !== []) {
+                $record->category_id = $categoryIds[0];
+                $record->save();
+            }
+        }
+
+        $record->features()->sync(array_values(array_filter($relationships['feature_ids'] ?? [])));
+        $record->colors()->sync(array_values(array_filter($relationships['color_ids'] ?? [])));
+        $record->tags()->sync(array_values(array_filter($relationships['tag_ids'] ?? [])));
+
+        $attributeValues = collect($relationships['attribute_values'] ?? [])
+            ->filter(fn (array $row): bool => filled($row['attribute_id'] ?? null) && filled($row['value'] ?? null))
+            ->mapWithKeys(fn (array $row): array => [
+                $row['attribute_id'] => ['value' => $row['value']],
+            ])
+            ->all();
+
+        $record->attributes()->sync($attributeValues);
     }
 }

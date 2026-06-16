@@ -13,6 +13,8 @@ use App\Models\Image;
 use App\Models\Item;
 use App\Models\Tag;
 use App\Models\User;
+use App\Services\Contributions\ContributionPointService;
+use App\Services\Items\ItemRevisionService;
 use Illuminate\Http\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -97,6 +99,23 @@ class SubmitShoeController extends Controller
                 ->all();
 
             $item->attributes()->sync($attributeValues);
+
+            $revision = app(ItemRevisionService::class)->capture(
+                $item,
+                $user,
+                'created',
+                'Submitted via the public shoe submission form',
+                ['source' => 'public-submit']
+            );
+
+            if ($revision !== null) {
+                app(ContributionPointService::class)->awardForItemCreation(
+                    $user,
+                    $item,
+                    $revision,
+                    ['source' => 'public-submit']
+                );
+            }
 
             if ($user->junior()) {
                 $item->publish($user);
