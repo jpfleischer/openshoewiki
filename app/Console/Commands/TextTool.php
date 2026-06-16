@@ -14,7 +14,7 @@ class TextTool extends Command
      *
      * @var string
      */
-    protected $signature = 'lolibrary:text-tool {--dump}';
+    protected $signature = 'osw:text-tool {--dump}';
 
     /**
      * The console command description.

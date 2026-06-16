@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+cloudpsql() {
+    local pod=$(kubectl get -l app=org.openshoewiki.debug.psql --template '{{$pod := index .items 0}}{{$pod.metadata.name}}' pods)
+    local database=${2:-openshoewiki}
+
+    echo "Connecting to database ${database} on ${pod}..."
+
+    kubectl exec -it $pod -c psql -- /bin/sh -c "psql \"postgres://\${DB_USERNAME}:\${DB_PASSWORD}@127.0.0.1:5432/${database}\""
+}
+
+cloudtinker() {
+    local pod=$(kubectl get -l app=org.openshoewiki.service.frontend --template '{{$pod := index .items 0}}{{$pod.metadata.name}}' pods)
+
+    echo "Running php artisan tinker on ${pod}..."
+
+    kubectl exec -it $pod -c openshoewiki-frontend -- php artisan tinker
+}
+
+cloudmigrate() {
+    local pod=$(kubectl get -l app=org.openshoewiki.service.frontend --template '{{$pod := index .items 0}}{{$pod.metadata.name}}' pods)
+
+    echo "Running php artisan migrate on ${pod}..."
+
+    kubectl exec -it $pod -c openshoewiki-frontend -- php artisan migrate
+}
+
+cloudshell() {
+    local pod=$(kubectl get -l app=org.openshoewiki.service.frontend --template '{{$pod := index .items 0}}{{$pod.metadata.name}}' pods)
+
+    echo "Running /bin/sh on ${pod}..."
+
+    kubectl exec -it $pod -c openshoewiki-frontend -- /bin/sh
+}
+
+case $1 in
+    tinker)
+        cloudtinker
+        ;;
+    shell)
+        cloudshell
+        ;;
+    migrate)
+        cloudmigrate
+        ;;
+    psql)
+        cloudpsql
+        ;;
+    build)
+        cd "$GOPATH/src/github.com/openshoewiki/build" && zsh ./build.zsh "${2:-master}"
+        ;;
+    *)
+        echo "Usage: openshoewiki [command] ..."
+        echo "     - openshoewiki tinker           : opens a tinker shell in k8s"
+        echo "     - openshoewiki shell            : opens /bin/sh in k8s"
+        echo "     - openshoewiki migrate          : runs php artisan migrate in k8s"
+        echo "     - openshoewiki psql [database]  : opens a psql shell in GCP from the cluster"
+        echo "     - openshoewiki build [commit]   : builds the site using the build repo"
+        ;;
+esac

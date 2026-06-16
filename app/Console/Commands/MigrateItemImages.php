@@ -15,7 +15,7 @@ class MigrateItemImages extends Command
      *
      * @var string
      */
-    protected $signature = 'lolibrary:migrate-images {--status=all}';
+    protected $signature = 'osw:migrate-images {--status=all}';
 
     /**
      * The console command description.

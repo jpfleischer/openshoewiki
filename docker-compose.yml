@@ -7,13 +7,13 @@
 
 services:
   db:
-    container_name: sakura-db
+    container_name: openshoewiki-db
     image: postgres
     restart: always
     environment:
-      POSTGRES_PASSWORD: lolibrary
+      POSTGRES_PASSWORD: openshoewiki-dev
       POSTGRES_USER: postgres
-      POSTGRES_DB: library
+      POSTGRES_DB: openshoewiki
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "8001:5432"
@@ -21,27 +21,31 @@ services:
       - ./dev:/var/lib/postgresql/data:rw
       - ./dev/initdb:/docker-entrypoint-initdb.d
   web:
-    container_name: sakura-web
-    image: ghcr.io/lolibrary/sakura-dev:latest
+    container_name: openshoewiki-web
+    image: ghcr.io/openshoewiki/openshoewiki-dev:latest
     build:
       context: .
       dockerfile: ./dev-dockerfile
     environment:
       - APP_DEBUG=true
-      - APP_KEY=insecurerandomkey111111111111111
+      - APP_KEY=${APP_KEY}
       - CACHE_DRIVER=file
       - DB_CONNECTION=pgsql
-      - DB_DATABASE=library
+      - DB_DATABASE=openshoewiki
       - DB_USERNAME=postgres
-      - DB_PASSWORD=lolibrary
+      - DB_PASSWORD=openshoewiki-dev
       - DB_HOST=db
       - AWS_DEFAULT_REGION=nyc3
-      - AWS_BUCKET=lolibrary
+      - AWS_BUCKET=openshoewiki-local
       - AWS_URL="http://localhost:3000"
       - AWS_CDN_URL="http://localhost:3000"
       - APP_URL="http://localhost:3000"
       - HTTPS_OFF=1
-      - SESSION_DRIVER=file
+      - SESSION_DRIVER=database
+      - SESSION_LIFETIME=43200
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI}
     volumes:
       - ./app:/srv/app
       - ./database:/srv/database
