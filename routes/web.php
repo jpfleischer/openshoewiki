@@ -90,11 +90,17 @@ Route::group(['middleware' => ['auth']], function () {
 Route::middleware('auth')->group(function () {
     Route::get('submissions', [SubmitShoeController::class, 'index'])->name('submit.index');
     Route::get('submit', [SubmitShoeController::class, 'create'])->name('submit.create');
-    Route::post('submit', [SubmitShoeController::class, 'store'])->name('submit.store');
+    Route::post('submit', [SubmitShoeController::class, 'store'])
+        ->middleware('throttle:6,60')
+        ->name('submit.store');
     Route::get('submit/{item}/thanks', [SubmitShoeController::class, 'thanks'])->name('submit.thanks');
     Route::get('items/{item}/candidate-edits/create', [ItemCandidateEditController::class, 'create'])->name('items.candidate-edits.create');
-    Route::post('items/{item}/candidate-edits', [ItemCandidateEditController::class, 'store'])->name('items.candidate-edits.store');
-    Route::post('candidate-edits/{candidateEdit}/vote', [ItemCandidateEditController::class, 'vote'])->name('candidate-edits.vote');
+    Route::post('items/{item}/candidate-edits', [ItemCandidateEditController::class, 'store'])
+        ->middleware('throttle:6,60')
+        ->name('items.candidate-edits.store');
+    Route::post('candidate-edits/{candidateEdit}/vote', [ItemCandidateEditController::class, 'vote'])
+        ->middleware('throttle:20,60')
+        ->name('candidate-edits.vote');
     Route::post('candidate-edits/{candidateEdit}/apply', [ItemCandidateEditController::class, 'apply'])->name('candidate-edits.apply');
     Route::post('candidate-edits/{candidateEdit}/reject', [ItemCandidateEditController::class, 'reject'])->name('candidate-edits.reject');
 });

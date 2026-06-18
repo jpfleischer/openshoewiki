@@ -29,8 +29,8 @@ class CandidateEditDecisionService
     public function thresholdFor(ItemCandidateEdit $candidateEdit): array
     {
         return match ($candidateEdit->risk_level) {
-            ItemCandidateEdit::RISK_LOW => ['min_votes' => 3, 'min_margin' => 2, 'auto_apply' => true],
-            ItemCandidateEdit::RISK_MEDIUM => ['min_votes' => 5, 'min_margin' => 3, 'auto_apply' => true],
+            ItemCandidateEdit::RISK_LOW => ['min_votes' => 3, 'min_margin' => 2, 'auto_apply' => false],
+            ItemCandidateEdit::RISK_MEDIUM => ['min_votes' => 5, 'min_margin' => 3, 'auto_apply' => false],
             default => ['min_votes' => 5, 'min_margin' => 3, 'auto_apply' => false],
         };
     }
