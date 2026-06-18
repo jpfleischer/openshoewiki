@@ -37,6 +37,7 @@ else
     install_php_dependencies
     build_frontend_assets
     run_migrations
+    php artisan storage:link || true
 
     # PHP dev server doesn't have a way of handling a static folder seperately
     # so just symlink these where the app expects them.

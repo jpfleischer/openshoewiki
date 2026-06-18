@@ -635,6 +635,17 @@ class ItemResource extends Resource
 
     public static function mutateItemFormDataBeforeFill(Item $record, array $data): array
     {
+        $data['image'] = static::stripPublicStoragePrefix($record->image);
+        $data['images'] = collect($record->images ?? [])
+            ->map(function (array $image): array {
+                if (isset($image['attributes']['image'])) {
+                    $image['attributes']['image'] = static::stripPublicStoragePrefix($image['attributes']['image']);
+                }
+
+                return $image;
+            })
+            ->values()
+            ->all();
         $data['category_ids'] = $record->categories()->pluck('categories.id')->all();
         $data['feature_ids'] = $record->features()->pluck('features.id')->all();
         $data['color_ids'] = $record->colors()->pluck('colors.id')->all();
@@ -661,10 +672,23 @@ class ItemResource extends Resource
 
         if (! filled($data['image'] ?? null)) {
             $data['image'] = $record->image;
+        } else {
+            $data['image'] = static::normalizePublicStoragePath($data['image']);
         }
 
         if (! array_key_exists('images', $data) || empty($data['images'])) {
             $data['images'] = $record->images;
+        } else {
+            $data['images'] = collect($data['images'])
+                ->map(function (array $image): array {
+                    if (isset($image['attributes']['image'])) {
+                        $image['attributes']['image'] = static::normalizePublicStoragePath($image['attributes']['image']);
+                    }
+
+                    return $image;
+                })
+                ->values()
+                ->all();
         }
 
         foreach (['notes', 'internal_notes'] as $field) {
@@ -700,6 +724,32 @@ class ItemResource extends Resource
         }
 
         return $record;
+    }
+
+    protected static function stripPublicStoragePrefix(?string $path): ?string
+    {
+        if (! filled($path)) {
+            return $path;
+        }
+
+        if (Str::startsWith($path, '/storage/')) {
+            return Str::after($path, '/storage/');
+        }
+
+        return $path;
+    }
+
+    protected static function normalizePublicStoragePath(?string $path): ?string
+    {
+        if (! filled($path)) {
+            return $path;
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://', '/storage/'])) {
+            return $path;
+        }
+
+        return '/storage/' . ltrim($path, '/');
     }
 
     protected static function normalizeEditorText(?string $value): string

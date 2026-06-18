@@ -162,7 +162,7 @@ if (! function_exists('default_asset')) {
      */
     function default_asset()
     {
-        return Storage::url('assets/default.png');
+        return asset('images/default.png');
     }
 }
 

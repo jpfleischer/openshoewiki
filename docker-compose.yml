@@ -27,7 +27,7 @@ services:
       context: .
       dockerfile: ./dev-dockerfile
     environment:
-      - APP_DEBUG=true
+      - APP_DEBUG=${APP_DEBUG}
       - APP_KEY=${APP_KEY}
       - CACHE_DRIVER=file
       - DB_CONNECTION=pgsql
