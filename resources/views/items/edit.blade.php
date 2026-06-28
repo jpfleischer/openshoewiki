@@ -33,7 +33,7 @@
                     </ul>
                 </div>
 
-            @if ($item->submitter && $item->submitter->is(auth()->user()) && auth()->user()->lolibrarian())
+            @if ($item->submitter && $item->submitter->is(auth()->user()) && auth()->user()->moderator())
                 <div class="col-lg-8">
                     <div class="card text-white bg-success">
                         <div class="card-body">
@@ -41,7 +41,7 @@
                         </div>
                     </div>
                 </div>
-            @elseif (auth()->user()->senior())
+            @elseif (auth()->user()->manager())
                 <div class="col-lg-8">
                     <div class="card text-white bg-success">
                         <div class="card-body">
@@ -279,8 +279,8 @@
                 <div class="col-lg-4 offset-lg-4 text-center">
                     @if ($item->published())
                         @if (
-                            ($item->publisher && $item->publisher->is(auth()->user()) && auth()->user()->lolibrarian())
-                            || auth()->user()->senior()
+                            ($item->publisher && $item->publisher->is(auth()->user()) && auth()->user()->moderator())
+                            || auth()->user()->manager()
                         )
                             <button type="submit" class="btn btn-success btn-block btn-lg">
                                 Update Item

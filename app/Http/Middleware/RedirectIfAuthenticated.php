@@ -19,7 +19,7 @@ class RedirectIfAuthenticated
     {
         if (Auth::guard($guard)->check()) {
             // conditional: redirect home if regular user, otherwise /library
-            if (Auth::guard($guard)->user()->junior()) {
+            if (Auth::guard($guard)->user()->editor()) {
                 return redirect('/library');
             }
 

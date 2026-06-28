@@ -18,7 +18,7 @@ class TagPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**
@@ -30,7 +30,7 @@ class TagPolicy
      */
     public function view(User $user, Tag $tag)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**

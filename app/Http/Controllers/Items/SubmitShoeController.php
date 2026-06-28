@@ -83,7 +83,7 @@ class SubmitShoeController extends Controller
             $item->internal_notes = 'Submitted via the public shoe submission form.';
             $item->image = $mainImage ? 'images/' . $mainImage->filename : null;
             $item->images = $galleryImages;
-            $item->status = $user->junior() ? Item::DRAFT : Item::PENDING;
+            $item->status = $user->editor() ? Item::DRAFT : Item::PENDING;
             $item->save();
 
             $item->categories()->sync($categoryIds);
@@ -117,7 +117,7 @@ class SubmitShoeController extends Controller
                 );
             }
 
-            if ($user->junior()) {
+            if ($user->editor()) {
                 $item->publish($user);
             }
 
@@ -126,7 +126,7 @@ class SubmitShoeController extends Controller
 
         return redirect()
             ->route('submit.thanks', $item)
-            ->with('status', $request->user()->junior()
+            ->with('status', $request->user()->editor()
                 ? 'Your shoe submission has been published.'
                 : 'Your shoe submission has been saved and is now pending review.');
     }
@@ -146,7 +146,7 @@ class SubmitShoeController extends Controller
             return false;
         }
 
-        if ($user->junior()) {
+        if ($user->editor()) {
             return true;
         }
 

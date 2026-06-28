@@ -34,7 +34,7 @@ class ItemController extends Controller
     {
         if (! $item->published()) {
             $user = auth()->user();
-            $allowed = $user && ($user->junior() || $item->user_id === $user->getKey());
+            $allowed = $user && ($user->editor() || $item->user_id === $user->getKey());
 
             if (! $allowed) {
                 abort(Response::HTTP_NOT_FOUND);
@@ -107,11 +107,11 @@ class ItemController extends Controller
     {
         $this->user = auth()->user();
 
-        if ($item->published() && ! $this->user->senior()) {
+        if ($item->published() && ! $this->user->manager()) {
             return back()->withErrors('Your level is not allowed to edit items once published!');
         }
 
-        if ($item->submitter && ! $item->submitter->is($this->user) && ! $this->user->senior()) {
+        if ($item->submitter && ! $item->submitter->is($this->user) && ! $this->user->manager()) {
             return back()->withErrors("You are not allowed to edit someone else's submission.");
         }
 
@@ -219,9 +219,9 @@ class ItemController extends Controller
         /** @var \App\Models\User $user */
         $user = auth()->user();
         if ($item->published()) {
-            $allowed = ($user->is($item->submitter) && $user->lolibrarian()) || $user->senior();
+            $allowed = ($user->is($item->submitter) && $user->moderator()) || $user->manager();
         } else {
-            $allowed = $user->is($item->submitter) || $user->senior();
+            $allowed = $user->is($item->submitter) || $user->manager();
         }
         if (! $allowed) {
             return back()->withErrors("Sorry, you can't do that!");
@@ -285,12 +285,12 @@ class ItemController extends Controller
         }
         /** @var \App\Models\User $user */
         $user = auth()->user();
-        if (! $user->is($item->submitter) && ! $user->senior()) {
+        if (! $user->is($item->submitter) && ! $user->manager()) {
             // require senior to publish other's items.
             return back()->withErrors("You cannot publish another user's post with your access level!");
         }
 
-        if (! $user->lolibrarian()) {
+        if (! $user->moderator()) {
             return back()->withErrors("Sorry, you can't publish items with your role");
         }
 
@@ -312,7 +312,7 @@ class ItemController extends Controller
         $user = auth()->user();
         if ($item->published() && ! $user->admin()) {
             return $error;
-        } elseif (! ($user->is($item->submitter) || $user->senior())) {
+        } elseif (! ($user->is($item->submitter) || $user->manager())) {
             return $error;
         }
         $item->delete();
@@ -339,9 +339,9 @@ class ItemController extends Controller
         $user = auth()->user();
 
         if ($item->published()) {
-            $allowed = ($user->is($item->submitter) && $user->lolibrarian()) || $user->senior();
+            $allowed = ($user->is($item->submitter) && $user->moderator()) || $user->manager();
         } else {
-            $allowed = $user->is($item->submitter) || $user->senior();
+            $allowed = $user->is($item->submitter) || $user->manager();
         }
 
         if (! $allowed) {

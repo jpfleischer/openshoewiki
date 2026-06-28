@@ -25,7 +25,7 @@ class ReviewCandidateEdit extends Page
     {
         $this->record = $this->resolveRecord($record);
 
-        abort_unless(auth()->user()?->lolibrarian(), 403);
+        abort_unless(auth()->user()?->moderator(), 403);
     }
 
     public function getTitle(): string

@@ -41,20 +41,29 @@ class AppServiceProvider extends ServiceProvider
         View::composer('components.years', Composers\Years::class);
 
         // Custom 'if' template variables for various roles
-        Blade::if('junior', function () {
-            return auth()->check() && auth()->user()->junior();
+        Blade::if('editor', function () {
+            return auth()->check() && auth()->user()->editor();
         });
-        Blade::if('lolibrarian', function () {
-            return auth()->check() && auth()->user()->lolibrarian();
+        Blade::if('moderator', function () {
+            return auth()->check() && auth()->user()->moderator();
         });
-        Blade::if('senior', function () {
-            return auth()->check() && auth()->user()->senior();
+        Blade::if('manager', function () {
+            return auth()->check() && auth()->user()->manager();
         });
         Blade::if('admin', function () {
             return auth()->check() && auth()->user()->admin();
         });
         Blade::if('dev', function () {
             return auth()->check() && auth()->user()->developer();
+        });
+        Blade::if('junior', function () {
+            return auth()->check() && auth()->user()->editor();
+        });
+        Blade::if('lolibrarian', function () {
+            return auth()->check() && auth()->user()->moderator();
+        });
+        Blade::if('senior', function () {
+            return auth()->check() && auth()->user()->manager();
         });
 
     }

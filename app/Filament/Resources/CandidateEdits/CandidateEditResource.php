@@ -154,6 +154,6 @@ class CandidateEditResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->lolibrarian() ?? false;
+        return auth()->user()?->moderator() ?? false;
     }
 }

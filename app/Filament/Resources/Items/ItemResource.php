@@ -477,7 +477,7 @@ class ItemResource extends Resource
             ];
         }
 
-        if ($user?->senior()) {
+        if ($user?->manager()) {
             return [
                 'My Items' => 'my-items',
                 'My Drafts' => 'my-drafts',

@@ -18,7 +18,7 @@ class AttributePolicy
      */
     public function viewAny(User $user)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**
@@ -29,7 +29,7 @@ class AttributePolicy
      */
     public function view(User $user, Attribute $attribute)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**

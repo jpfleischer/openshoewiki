@@ -18,7 +18,7 @@ class ColorPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**
@@ -30,7 +30,7 @@ class ColorPolicy
      */
     public function view(User $user, Color $color)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**

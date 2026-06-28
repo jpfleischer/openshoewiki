@@ -18,7 +18,7 @@ class FeaturePolicy
      */
     public function viewAny(User $user)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**
@@ -30,7 +30,7 @@ class FeaturePolicy
      */
     public function view(User $user, Feature $feature)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**

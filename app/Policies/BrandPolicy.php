@@ -18,7 +18,7 @@ class BrandPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**
@@ -30,7 +30,7 @@ class BrandPolicy
      */
     public function view(User $user, Brand $brand)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**

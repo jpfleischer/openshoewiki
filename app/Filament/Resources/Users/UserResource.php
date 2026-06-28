@@ -63,9 +63,9 @@ class UserResource extends Resource
                             ->options([
                                 User::DEVELOPER => 'Developer',
                                 User::ADMIN => 'Administrator',
-                                User::SENIOR_LOLIBRARIAN => 'Senior Lolibrarian',
-                                User::LOLIBRARIAN => 'Lolibrarian',
-                                User::JUNIOR_LOLIBRARIAN => 'Junior Lolibrarian',
+                                User::MANAGER => 'Manager',
+                                User::MODERATOR => 'Moderator',
+                                User::EDITOR => 'Editor',
                                 User::REGULAR => 'Regular User',
                             ])
                             ->required()

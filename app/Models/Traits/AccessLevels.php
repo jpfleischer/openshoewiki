@@ -50,35 +50,57 @@ trait AccessLevels
     }
 
     /**
-     * Check if a user is an admin (senior lolibrarian).
+     * Check if a user is a higher-trust staff manager.
      *
      * @return bool
      */
-    public function senior(): bool
+    public function manager(): bool
     {
-        return $this->accessLevel() >= User::SENIOR_LOLIBRARIAN;
+        return $this->accessLevel() >= User::MANAGER;
     }
 
     /**
-     * Check if a user is able to process the moderation queue.
-     *
-     * Lolibrarians can also suggest edits to Items
+     * Check if a user can moderate and publish content.
      *
      * @return bool
      */
-    public function lolibrarian(): bool
+    public function moderator(): bool
     {
-        return $this->accessLevel() >= User::LOLIBRARIAN;
+        return $this->accessLevel() >= User::MODERATOR;
     }
 
     /**
-     * Check if a user is able to perform basic functions.
+     * Check if a user has basic trusted editor access.
      *
      * @return bool
+     */
+    public function editor(): bool
+    {
+        return $this->accessLevel() >= User::EDITOR;
+    }
+
+    /**
+     * Legacy alias for editor().
      */
     public function junior(): bool
     {
-        return $this->accessLevel() >= User::JUNIOR_LOLIBRARIAN;
+        return $this->editor();
+    }
+
+    /**
+     * Legacy alias for moderator().
+     */
+    public function lolibrarian(): bool
+    {
+        return $this->moderator();
+    }
+
+    /**
+     * Legacy alias for manager().
+     */
+    public function senior(): bool
+    {
+        return $this->manager();
     }
 
     /**
@@ -93,12 +115,12 @@ trait AccessLevels
                 return 'Developer';
             case $this->admin():
                 return 'Administrator';
-            case $this->senior():
-                return 'Senior Lolibrarian';
-            case $this->lolibrarian():
-                return 'Lolibrarian';
-            case $this->junior():
-                return 'Junior Lolibrarian';
+            case $this->manager():
+                return 'Manager';
+            case $this->moderator():
+                return 'Moderator';
+            case $this->editor():
+                return 'Editor';
             case $this->banned:
                 return 'Banned User';
             default:

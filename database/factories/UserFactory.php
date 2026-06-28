@@ -22,25 +22,40 @@ class UserFactory extends Factory
         ];
     }
 
-    public function junior()
+    public function editor()
     {
         return $this->state([
-            'level' => User::JUNIOR_LOLIBRARIAN,
+            'level' => User::EDITOR,
         ]);
+    }
+
+    public function moderator()
+    {
+        return $this->state([
+            'level' => User::MODERATOR,
+        ]);
+    }
+
+    public function manager()
+    {
+        return $this->state([
+            'level' => User::MANAGER,
+        ]);
+    }
+
+    public function junior()
+    {
+        return $this->editor();
     }
 
     public function lolibrarian()
     {
-        return $this->state([
-            'level' => User::LOLIBRARIAN,
-        ]);
+        return $this->moderator();
     }
 
     public function senior()
     {
-        return $this->state([
-            'level' => User::SENIOR_LOLIBRARIAN,
-        ]);
+        return $this->manager();
     }
 
     public function admin()

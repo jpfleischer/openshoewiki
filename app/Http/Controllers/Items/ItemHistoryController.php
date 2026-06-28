@@ -15,7 +15,7 @@ class ItemHistoryController extends Controller
     {
         if (! $item->published()) {
             $user = auth()->user();
-            $allowed = $user && ($user->junior() || $item->user_id === $user->getKey());
+            $allowed = $user && ($user->editor() || $item->user_id === $user->getKey());
 
             if (! $allowed) {
                 abort(Response::HTTP_NOT_FOUND);

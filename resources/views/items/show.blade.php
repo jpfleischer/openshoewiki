@@ -23,7 +23,7 @@
                         @include('components.items.closet')
                     </div>
                 </div>
-                @if ($item->published() || (auth()->user() && (auth()->user()->junior() || $item->user_id === auth()->id())))
+                @if ($item->published() || (auth()->user() && (auth()->user()->editor() || $item->user_id === auth()->id())))
                 <div class="row p-0 mx-0 my-3">
                     <div class="col p-1 list-group text-center small">
                     <a class="btn btn-outline-primary" href="{{ route('items.history', $item) }}">
@@ -32,7 +32,7 @@
                     </div>
                 </div>
                 @endif
-                @if (auth()->user() && ! $item->published() && (auth()->user()->junior() || $item->user_id === auth()->id()))
+                @if (auth()->user() && ! $item->published() && (auth()->user()->editor() || $item->user_id === auth()->id()))
                 <div class="row p-0 mx-0 my-3">
                     <div class="col p-1 list-group text-center small">
                     <a class="btn btn-outline-primary" href="{{ route('submit.index') }}">

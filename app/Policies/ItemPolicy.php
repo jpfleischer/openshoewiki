@@ -22,7 +22,7 @@ class ItemPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**
@@ -35,10 +35,10 @@ class ItemPolicy
     public function view(User $user, Item $item)
     {
         if ($item->user_id !== $user->id) {
-            return $user->lolibrarian();
+            return $user->moderator();
         }
 
-        return $user->junior();
+        return $user->editor();
     }
 
     /**
@@ -49,7 +49,7 @@ class ItemPolicy
      */
     public function create(User $user)
     {
-        return $user->junior();
+        return $user->editor();
     }
 
     /**
@@ -64,10 +64,10 @@ class ItemPolicy
         if ($item->status === Item::PUBLISHED) {
             // lolibrarians can update items they themselves published
             if ($item->publisher_id === $user->id) {
-                return $user->lolibrarian();
+                return $user->moderator();
             }
 
-            return $user->senior();
+            return $user->manager();
         }
 
         // otherwise, this is a draft:
@@ -75,14 +75,14 @@ class ItemPolicy
         // users can update other people's drafts if senior.
 
         if ($item->user_id === $user->id) {
-            return $user->junior();
+            return $user->editor();
         }
 
         if ($item->user_id === null) {
-            return $user->junior();
+            return $user->editor();
         }
 
-        return $user->senior();
+        return $user->manager();
     }
 
     /**
@@ -97,21 +97,21 @@ class ItemPolicy
         if ($item->status === Item::PUBLISHED) {
             // lolibrarian can delete items they themselves published
             if ($item->publisher_id === $user->id) {
-                return $user->lolibrarian();
+                return $user->moderator();
             }
 
             // senior lolibrarians can delete published items.
-            return $user->senior();
+            return $user->manager();
         }
 
         // junior can delete their own drafts.
         if ($item->user_id === $user->id) {
-            return $user->junior();
+            return $user->editor();
         }
 
         // only senior can delete drafts from other people.
         // This is just a separate check so it can be changed easily.
-        return $user->senior();
+        return $user->manager();
     }
 
     /**
@@ -126,20 +126,20 @@ class ItemPolicy
         // must be senior to unpublish, or the original publisher
         if ($item->status === Item::PUBLISHED) {
             if ($item->publisher_id === $user->id) {
-                return $user->lolibrarian();
+                return $user->moderator();
             }
 
-            return $user->senior();
+            return $user->manager();
         }
 
         // otherwise, this is a draft:
         // users can publish their own drafts if lolibrarian.
         if ($item->user_id === $user->id) {
-            return $user->lolibrarian();
+            return $user->moderator();
         }
 
         // otherwise senior can publish any draft.
-        return $user->senior();
+        return $user->manager();
     }
 
     /**
