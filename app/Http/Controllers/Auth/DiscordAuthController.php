@@ -56,6 +56,7 @@ class DiscordAuthController extends Controller
             return User::query()->create([
                 'name' => $name,
                 'username' => $username,
+                'level' => User::REGULAR,
                 'discord_id' => $discordId,
                 'discord_username' => $discordUser->getNickname() ?: $discordUser->getName(),
                 'discord_avatar' => $avatar,

@@ -23,8 +23,7 @@
             </h6>
 
             <p class="card-text">
-                {{-- post body is raw HTML. blog post permission is only given to admin or higher. --}}
-                {!! $post->body !!}
+                {!! purify($post->body) !!}
             </p>
         </div>
     </div>

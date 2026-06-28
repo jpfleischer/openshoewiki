@@ -27,6 +27,19 @@ class Post extends Model
      */
     protected $dates = ['published_at'];
 
+    protected static function booted()
+    {
+        static::saving(function (self $post): void {
+            if ($post->preview !== null) {
+                $post->preview = purify($post->preview);
+            }
+
+            if ($post->body !== null) {
+                $post->body = purify($post->body);
+            }
+        });
+    }
+
     /**
      * The user who created this post.
      *

@@ -15,8 +15,7 @@
         </h6>
 
         <p class="card-text" style="min-height: 15rem; overflow-y: hidden">
-            {{-- post preview is raw HTML. blog post permission is only given to admin or higher. --}}
-            {!! $post->preview !!}
+            {!! purify($post->preview) !!}
         </p>
 
         <div class="card-body text-right">
