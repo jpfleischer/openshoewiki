@@ -1,6 +1,6 @@
 # OpenShoeWiki Browser Extension
 
-This is a minimal Manifest V3 browser extension for sending the current product page to a configured Ollama host.
+This is a minimal Manifest V3 browser extension for sending the current product page to a configured Ollama host. `make yep OLLAMA_GPU_ID=1 OLLAMA_MODEL=qwen2.5:32b`
 
 ## What it does
 
