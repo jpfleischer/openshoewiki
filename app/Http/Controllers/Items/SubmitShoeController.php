@@ -11,6 +11,7 @@ use App\Models\Color;
 use App\Models\Feature;
 use App\Models\Image;
 use App\Models\Item;
+use App\Models\SourcePageArchive;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\Contributions\ContributionPointService;
@@ -18,6 +19,8 @@ use App\Services\Items\ItemRevisionService;
 use Illuminate\Http\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class SubmitShoeController extends Controller
 {
@@ -51,6 +54,30 @@ class SubmitShoeController extends Controller
             $user = $request->user();
             $brand = Brand::query()->findOrFail($request->input('brand_id'));
             $categoryIds = array_values(array_filter($request->input('category_ids', [])));
+            $archiveId = $request->input('source_page_archive_id');
+            $archive = null;
+            $sourcePageHtml = $request->input('source_page_html');
+
+            if ($archiveId) {
+                $archive = SourcePageArchive::query()
+                    ->whereKey($archiveId)
+                    ->where('user_id', $user->getKey())
+                    ->first();
+
+                if (! $archive) {
+                    throw ValidationException::withMessages([
+                        'source_page_archive_id' => 'The selected source page archive is not available for this submission.',
+                    ]);
+                }
+            } elseif (filled($sourcePageHtml) && filled($request->input('source_page_url'))) {
+                $archive = $this->createSourcePageArchive(
+                    $user,
+                    $request->input('source_page_url'),
+                    $request->input('source_page_title'),
+                    $sourcePageHtml,
+                    $request->input('source_page_captured_at')
+                );
+            }
 
             $mainImage = $request->file('image')
                 ? Image::from($request->file('image'))
@@ -80,6 +107,7 @@ class SubmitShoeController extends Controller
             $item->brand()->associate($brand);
             $item->category_id = $categoryIds[0] ?? null;
             $item->submitter()->associate($user);
+            $item->source_page_archive_id = $archive?->getKey();
             $item->internal_notes = 'Submitted via the public shoe submission form.';
             $item->image = $mainImage ? 'images/' . $mainImage->filename : null;
             $item->images = $galleryImages;
@@ -151,5 +179,30 @@ class SubmitShoeController extends Controller
         }
 
         return $item->user_id === $user->getKey();
+    }
+
+    protected function createSourcePageArchive(User $user, string $sourceUrl, ?string $title, string $html, ?string $capturedAt): SourcePageArchive
+    {
+        $contentHash = hash('sha256', $html);
+        $domain = parse_url($sourceUrl, PHP_URL_HOST) ?: null;
+        $storagePath = 'source-pages/' . now()->format('Y/m/d') . '/' . $contentHash . '.html.gz';
+
+        if (! Storage::disk('local')->exists($storagePath)) {
+            Storage::disk('local')->put($storagePath, gzencode($html, 9));
+        }
+
+        return SourcePageArchive::create([
+            'user_id' => $user->getKey(),
+            'source_url' => $sourceUrl,
+            'domain' => $domain,
+            'title' => $title,
+            'storage_disk' => 'local',
+            'storage_path' => $storagePath,
+            'content_hash' => $contentHash,
+            'content_bytes' => strlen($html),
+            'mime_type' => 'text/html',
+            'compression' => 'gzip',
+            'captured_at' => $capturedAt ?: null,
+        ]);
     }
 }

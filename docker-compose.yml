@@ -22,6 +22,7 @@ services:
       - ./dev/initdb:/docker-entrypoint-initdb.d
   web:
     container_name: openshoewiki-web
+    restart: always
     image: ghcr.io/openshoewiki/openshoewiki-dev:latest
     build:
       context: .
@@ -62,6 +63,6 @@ services:
       - ./package.json:/srv/package.json
       - ./yarn.lock:/srv/yarn.lock
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       - db

@@ -361,6 +361,11 @@ class ItemResource extends Resource
                     ->icon(Heroicon::OutlinedClock)
                     ->visible(fn (Item $record): bool => auth()->user()?->can('viewRevisionHistory', $record) ?? false)
                     ->url(fn (Item $record): string => static::getUrl('history', ['record' => $record])),
+                Action::make('download_source_page_html')
+                    ->label('Archived HTML')
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->visible(fn (Item $record): bool => $record->source_page_archive_id !== null && (auth()->user()?->can('viewRevisionHistory', $record) ?? false))
+                    ->url(fn (Item $record): string => route('items.source-page-archive.download', $record)),
                 static::makePublishAction(),
                 static::makeUnpublishAction(),
                 static::makePendingAction(),

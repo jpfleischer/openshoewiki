@@ -275,6 +275,11 @@ class Item extends Model
         return $this->hasMany(ContributionEvent::class);
     }
 
+    public function sourcePageArchive()
+    {
+        return $this->belongsTo(SourcePageArchive::class);
+    }
+
     public function candidateEdits()
     {
         return $this->hasMany(ItemCandidateEdit::class)->latest();

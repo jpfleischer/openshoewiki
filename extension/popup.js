@@ -111,6 +111,56 @@ function buildPrompt(pageData, instruction) {
   ].join("\n");
 }
 
+function buildAuthHeader(username, password) {
+  return `Basic ${btoa(`${username}:${password}`)}`;
+}
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s.`)), ms);
+    })
+  ]);
+}
+
+async function requestGeneration(settings, prompt) {
+  const response = await fetch(`${settings.baseUrl.replace(/\/+$/, "")}/api/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: buildAuthHeader(settings.username, settings.password)
+    },
+    body: JSON.stringify({
+      model: settings.model,
+      prompt,
+      format: "json",
+      stream: false,
+      options: {
+        temperature: 0
+      }
+    })
+  });
+
+  const text = await response.text();
+  let body;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    body = null;
+  }
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    statusText: response.statusText,
+    url: response.url,
+    headers: Object.fromEntries(response.headers.entries()),
+    body,
+    text
+  };
+}
+
 function parseModelResponse(response) {
   if (typeof response !== "string") {
     return response;
@@ -698,6 +748,7 @@ async function extractPageData(tabId) {
       return {
         url: location.href,
         title,
+        rawHtml: document.documentElement.outerHTML,
         signals: {
           title,
           ogTitle: meta('meta[property="og:title"]'),
@@ -731,47 +782,34 @@ async function analyzeCurrentPage() {
   }
 
   const tab = await getSourceTab();
-  const pageData = await extractPageData(tab.id);
+  setStatus(elements.runStatus, "Extracting page data...");
+  const pageData = await withTimeout(extractPageData(tab.id), 20000, "Page extraction");
+  const capturedAt = new Date().toISOString();
   const prompt = buildPrompt(pageData, EXTRACTION_PROMPT);
-
-  const transport = await new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      {
-        type: "generate",
-        baseUrl: settings.baseUrl,
-        username: settings.username,
-        password: settings.password,
-        model: settings.model,
-        prompt
-      },
-      (response) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-
-        if (!response) {
-          reject(new Error("No response from background script."));
-          return;
-        }
-
-        if (response.networkError) {
-          const error = new Error(response.error || "Network request failed.");
-          error.transport = response;
-          reject(error);
-          return;
-        }
-
-        resolve(response);
-      }
-    );
-  });
+  setStatus(elements.runStatus, `Sending ${settings.model} request...`);
+  let transport;
+  try {
+    transport = await withTimeout(requestGeneration(settings, prompt), 180000, "Ollama request");
+  } catch (error) {
+    const wrapped = new Error(error instanceof Error ? error.message : String(error));
+    wrapped.transport = {
+      ok: false,
+      networkError: true,
+      error: wrapped.message
+    };
+    throw wrapped;
+  }
 
   return {
     request: {
       url: pageData.url,
       signals: pageData.signals,
       visibleText: pageData.visibleText,
+      sourcePage: {
+        url: pageData.url,
+        title: pageData.title,
+        captured_at: capturedAt
+      },
       prompt
     },
     transport: {
@@ -783,10 +821,18 @@ async function analyzeCurrentPage() {
       rawText: transport.text
     },
     raw_response: parseModelResponse(transport.body?.response ?? transport.body ?? null),
-    response: buildNormalizedResponse(
-      pageData,
-      parseModelResponse(transport.body?.response ?? transport.body ?? null)
-    )
+    response: {
+      ...buildNormalizedResponse(
+        pageData,
+        parseModelResponse(transport.body?.response ?? transport.body ?? null)
+      ),
+      source_page: {
+        url: pageData.url,
+        title: pageData.title,
+        captured_at: capturedAt,
+        html: pageData.rawHtml
+      }
+    }
   };
 }
 

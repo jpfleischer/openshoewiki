@@ -27,6 +27,11 @@
 
             <form action="{{ route('submit.store') }}" method="post" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" id="source_page_archive_id" name="source_page_archive_id" value="{{ old('source_page_archive_id') }}">
+                <input type="hidden" id="source_page_url" name="source_page_url" value="{{ old('source_page_url') }}">
+                <input type="hidden" id="source_page_title" name="source_page_title" value="{{ old('source_page_title') }}">
+                <input type="hidden" id="source_page_captured_at" name="source_page_captured_at" value="{{ old('source_page_captured_at') }}">
+                <textarea id="source_page_html" name="source_page_html" hidden>{{ old('source_page_html') }}</textarea>
 
                 <div class="card shadow-sm mb-4">
                     <div class="card-body">
@@ -468,9 +473,31 @@
             var materials = Array.isArray(data.materials) ? data.materials.join(', ') : (data.materials || '');
             var heelHeight = data.heel_height || '';
             var platformHeight = data.platform_height || '';
+            var sourcePageArchiveId = data.source_page_archive_id || '';
+            var sourcePage = data.source_page || {};
 
             if (pairName) {
                 document.getElementById('english_name').value = pairName;
+            }
+
+            if (sourcePageArchiveId) {
+                document.getElementById('source_page_archive_id').value = sourcePageArchiveId;
+            }
+
+            if (sourcePage.url) {
+                document.getElementById('source_page_url').value = sourcePage.url;
+            }
+
+            if (sourcePage.title) {
+                document.getElementById('source_page_title').value = sourcePage.title;
+            }
+
+            if (sourcePage.captured_at) {
+                document.getElementById('source_page_captured_at').value = sourcePage.captured_at;
+            }
+
+            if (sourcePage.html) {
+                document.getElementById('source_page_html').value = sourcePage.html;
             }
 
             if (sku) {

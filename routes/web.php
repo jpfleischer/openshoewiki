@@ -10,6 +10,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Items\BrandController;
 use App\Http\Controllers\Items\CategoryController;
 use App\Http\Controllers\Items\ColorController;
+use App\Http\Controllers\Items\DownloadSourcePageArchiveController;
 use App\Http\Controllers\Items\FeatureController;
 use App\Http\Controllers\Items\ItemHistoryController;
 use App\Http\Controllers\Items\ItemController;
@@ -94,6 +95,8 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:6,60')
         ->name('submit.store');
     Route::get('submit/{item}/thanks', [SubmitShoeController::class, 'thanks'])->name('submit.thanks');
+    Route::get('items/{item}/source-page-archive', DownloadSourcePageArchiveController::class)
+        ->name('items.source-page-archive.download');
     Route::get('items/{item}/candidate-edits/create', [ItemCandidateEditController::class, 'create'])->name('items.candidate-edits.create');
     Route::post('items/{item}/candidate-edits', [ItemCandidateEditController::class, 'store'])
         ->middleware('throttle:6,60')
