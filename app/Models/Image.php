@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 /**
  * An item image.
@@ -54,9 +54,10 @@ class Image extends Model
 
         // if we can't delete the file, don't delete the image from the database.
         static::deleting(function (self $model) {
-            $path = public_path('images/'.$model->filename);
+            $storagePath = 'images/'.$model->filename;
+            $publicDisk = Storage::disk('public');
 
-            return ! File::exists($path) || File::delete($path);
+            return ! $publicDisk->exists($storagePath) || $publicDisk->delete($storagePath);
         });
     }
 
@@ -83,12 +84,22 @@ class Image extends Model
 
         $model->id = $id ?? uuid4();
         $model->filename = $model->id.'.'.$file->extension();
-        File::ensureDirectoryExists(public_path('images'));
-        $file->move(public_path('images'), $model->filename);
+
+        if (Storage::disk('public')->putFileAs('images', $file, $model->filename) === false) {
+            throw new RuntimeException('Unable to store the uploaded image.');
+        }
 
         $model->save();
 
         return $model;
+    }
+
+    /**
+     * Get the public URL path for this stored image.
+     */
+    public function publicUrlPath(): string
+    {
+        return 'storage/images/'.$this->filename;
     }
 
     /**
@@ -109,7 +120,9 @@ class Image extends Model
      */
     public function getUrlAttribute()
     {
-        return cdn_path($this->filename);
+        $path = $this->publicUrlPath();
+
+        return cdn_link($path);
     }
 
     /**

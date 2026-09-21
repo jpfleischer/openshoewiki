@@ -737,8 +737,8 @@ class ItemResource extends Resource
             return $path;
         }
 
-        if (Str::startsWith($path, '/storage/')) {
-            return Str::after($path, '/storage/');
+        if (Str::startsWith($path, ['/storage/', 'storage/'])) {
+            return Str::after($path, 'storage/');
         }
 
         return $path;
@@ -754,7 +754,17 @@ class ItemResource extends Resource
             return $path;
         }
 
-        return '/storage/' . ltrim($path, '/');
+        if (Str::startsWith($path, 'storage/')) {
+            return '/'.$path;
+        }
+
+        $relativePath = ltrim($path, '/');
+
+        if (Str::startsWith($relativePath, 'images/') && ! Storage::disk('public')->exists($relativePath)) {
+            return $relativePath;
+        }
+
+        return '/storage/'.$relativePath;
     }
 
     protected static function normalizeEditorText(?string $value): string

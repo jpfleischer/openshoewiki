@@ -4,6 +4,15 @@
 /public/css/filament
 /public/js/filament
 /public/fonts/filament
+# Prevent UUID-named uploads in the legacy public directory from entering Git.
+/public/images/????????-????-????-????-????????????.*
+# Absolute-path aliases created in the development container.
+/public/assets/assets
+/public/categories/categories
+/public/css/css
+/public/fonts/fonts
+/public/images/images
+/public/js/js
 /storage/*.key
 /vendor
 .env

@@ -89,7 +89,7 @@ class SubmitShoeController extends Controller
                     'key' => bin2hex(random_bytes(8)),
                     'layout' => 'image',
                     'attributes' => [
-                        'image' => 'images/' . $image->filename,
+                        'image' => $image->publicUrlPath(),
                     ],
                 ])
                 ->all();
@@ -109,7 +109,7 @@ class SubmitShoeController extends Controller
             $item->submitter()->associate($user);
             $item->source_page_archive_id = $archive?->getKey();
             $item->internal_notes = 'Submitted via the public shoe submission form.';
-            $item->image = $mainImage ? 'images/' . $mainImage->filename : null;
+            $item->image = $mainImage?->publicUrlPath();
             $item->images = $galleryImages;
             $item->status = $user->editor() ? Item::DRAFT : Item::PENDING;
             $item->save();

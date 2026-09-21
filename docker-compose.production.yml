@@ -48,7 +48,7 @@ services:
       SESSION_LIFETIME: "43200"
     volumes:
       - ./storage:/srv/storage:rw
-      - ./public/images:/srv/public/images:rw
+      - ./public/images:/srv/public/images:ro
     depends_on:
       - db
 

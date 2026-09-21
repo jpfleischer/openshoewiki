@@ -7,10 +7,12 @@ files and forwards application requests to PHP-FPM. The host reverse proxy
 continues to reach the site at `127.0.0.1:3001`; PostgreSQL is not published
 on a host port.
 
-The production image does not contain `.env`, `storage/`, or uploaded
-`public/images/`. At runtime, `storage/` and `public/images/` are mounted from
-the host. This preserves source-page archives, Laravel storage, and uploaded
-images. The app's startup command does not run migrations or seeders.
+The production image does not contain `.env`, `storage/`, or `public/images/`.
+At runtime, both `storage/` and `public/images/` are mounted from the host.
+`storage/` contains source-page archives and user-uploaded images under
+`storage/app/public/images/`; `public/images/` contains site assets only and is
+read-only in both containers. The app's startup command does not run migrations
+or seeders.
 
 ## Build and check without replacing the live stack
 
@@ -31,7 +33,8 @@ does not change the database.
 
 Before a deployment that includes schema changes, make a database backup and
 review the pending migration list. Migrations are an explicit operator action,
-not part of container startup:
+not part of container startup. For a complete recovery point, back up both
+`storage/` and `public/images/` along with the database.
 
 ```sh
 docker exec openshoewiki-db pg_dump -U postgres openshoewiki > openshoewiki-before-deploy.sql
@@ -68,5 +71,5 @@ docker compose up -d web
 ```
 
 Never use `docker compose down -v` for this rollback. Database files remain in
-`./dev`, source-page archives in `./storage`, and uploaded images in
-`./public/images`.
+`./dev`, source-page archives and uploaded images in `./storage`, and site
+assets in `./public/images`.

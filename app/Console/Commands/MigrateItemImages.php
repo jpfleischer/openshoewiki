@@ -110,7 +110,7 @@ class MigrateItemImages extends Command
             return;
         }
 
-        $item->image = "images/{$image->filename}";
+        $item->image = $image->publicUrlPath();
         $item->save();
     }
 
@@ -127,7 +127,7 @@ class MigrateItemImages extends Command
                 'key' => bin2hex(random_bytes(8)),
                 'layout' => 'image',
                 'attributes' => [
-                    'image' => "images/{$image->filename}",
+                    'image' => $image->publicUrlPath(),
                 ],
             ];
         }
