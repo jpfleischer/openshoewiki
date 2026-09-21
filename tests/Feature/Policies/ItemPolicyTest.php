@@ -8,7 +8,7 @@ use Tests\TestCase;
 
 class ItemPolicyTest extends TestCase
 {
-    private function makeUser(string $state = null): User
+    private function makeUser(?string $state = null): User
     {
         $factory = User::factory();
 

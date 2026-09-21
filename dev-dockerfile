@@ -1,25 +1,34 @@
-FROM debian:bookworm
+FROM node:24-bookworm-slim AS node
+
+FROM php:8.4-cli-bookworm
+
+COPY --from=node /usr/local/ /usr/local/
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 RUN apt-get update && apt-get install -y \
 	bash \
 	curl \
 	git \
 	unzip \
-	nodejs \
-	npm \
-	composer \
-	php8.2-cli \
-	php8.2-pgsql \
-	php8.2-intl \
-	php8.2-zip \
-	php8.2-mbstring \
-	php8.2-xml \
-	php8.2-curl \
-	php8.2-bcmath \
+	libicu-dev \
+	libpq-dev \
+	libzip-dev \
 	&& rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-install -j"$(nproc)" \
+	bcmath \
+	intl \
+	pdo_pgsql \
+	&& docker-php-ext-install zip
 
 WORKDIR /srv
 
 COPY . /srv
-RUN chmod +x /srv/dev.sh && /bin/bash /srv/dev.sh "SETUP"
+RUN mkdir -p /srv/storage/app/public /srv/storage/framework/cache/data \
+	/srv/storage/framework/sessions /srv/storage/framework/views \
+	/srv/storage/logs /srv/bootstrap/cache /srv/public/images \
+	&& chmod +x /srv/dev.sh \
+	&& APP_ENV=local APP_DEBUG=false \
+	APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
+	/bin/bash /srv/dev.sh "SETUP"
 ENTRYPOINT [ "/bin/bash", "-c", "/bin/bash /srv/dev.sh" ]

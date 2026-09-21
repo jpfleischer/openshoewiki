@@ -48,6 +48,9 @@ return [
 
     'encrypt' => false,
 
+    // Preserve existing PHP-serialized sessions across the Laravel 13 upgrade.
+    'serialization' => 'php',
+
     /*
     |--------------------------------------------------------------------------
     | Session File Location

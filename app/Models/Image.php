@@ -77,7 +77,7 @@ class Image extends Model
      * @param string $id
      * @return static
      */
-    public static function from($file, string $id = null)
+    public static function from($file, ?string $id = null)
     {
         $model = new static;
 

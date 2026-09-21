@@ -100,4 +100,25 @@ return [
 
     'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache'),
 
+    /*
+    | Classes permitted when reading serialized values from a cache store.
+    | These are the translatable models cached by the application.
+    */
+    'serializable_classes' => [
+        \Illuminate\Database\Eloquent\Collection::class,
+        \App\Models\Traits\Collection::class,
+        \App\Models\Attribute::class,
+        \App\Models\AttributeTranslation::class,
+        \App\Models\Brand::class,
+        \App\Models\BrandTranslation::class,
+        \App\Models\Category::class,
+        \App\Models\CategoryTranslation::class,
+        \App\Models\Color::class,
+        \App\Models\ColorTranslation::class,
+        \App\Models\Feature::class,
+        \App\Models\FeatureTranslation::class,
+        \App\Models\Tag::class,
+        \App\Models\TagTranslation::class,
+    ],
+
 ];
