@@ -11,12 +11,10 @@ services:
     image: postgres
     restart: always
     environment:
-      POSTGRES_PASSWORD: openshoewiki-dev
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
       POSTGRES_USER: postgres
       POSTGRES_DB: openshoewiki
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "8001:5432"
     volumes:
       - ./dev:/var/lib/postgresql/data:rw
       - ./dev/initdb:/docker-entrypoint-initdb.d
@@ -27,6 +25,8 @@ services:
     build:
       context: .
       dockerfile: ./dev-dockerfile
+    env_file:
+      - .env
     environment:
       - APP_DEBUG=${APP_DEBUG}
       - APP_KEY=${APP_KEY}
@@ -34,7 +34,7 @@ services:
       - DB_CONNECTION=pgsql
       - DB_DATABASE=openshoewiki
       - DB_USERNAME=postgres
-      - DB_PASSWORD=openshoewiki-dev
+      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
       - DB_HOST=db
       - AWS_DEFAULT_REGION=nyc3
       - AWS_BUCKET=openshoewiki-local
@@ -63,6 +63,6 @@ services:
       - ./package.json:/srv/package.json
       - ./yarn.lock:/srv/yarn.lock
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
       - db

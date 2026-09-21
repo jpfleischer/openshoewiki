@@ -1,0 +1,84 @@
+name: openshoewiki
+
+services:
+  # Keep the existing database service and data directory unchanged.
+  db:
+    container_name: openshoewiki-db
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      POSTGRES_USER: postgres
+      POSTGRES_DB: openshoewiki
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./dev:/var/lib/postgresql/data:rw
+      - ./dev/initdb:/docker-entrypoint-initdb.d
+
+  web:
+    container_name: openshoewiki-web
+    image: openshoewiki:production
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: app
+      args:
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    env_file:
+      - .env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:?APP_KEY must be set}
+      APP_URL: ${APP_URL:?APP_URL must be set}
+      CACHE_DRIVER: file
+      DB_CONNECTION: pgsql
+      DB_DATABASE: openshoewiki
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      DB_HOST: db
+      AWS_DEFAULT_REGION: nyc3
+      AWS_BUCKET: openshoewiki-local
+      AWS_URL: ${APP_URL:?APP_URL must be set}
+      AWS_CDN_URL: ${APP_URL:?APP_URL must be set}
+      HTTPS_OFF: "1"
+      SESSION_DRIVER: database
+      SESSION_LIFETIME: "43200"
+    volumes:
+      - ./storage:/srv/storage:rw
+      - ./public/images:/srv/public/images:rw
+    depends_on:
+      - db
+
+  nginx:
+    container_name: openshoewiki-nginx
+    image: openshoewiki-nginx:production
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: nginx
+      args:
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    ports:
+      - "127.0.0.1:3001:80"
+    volumes:
+      - ./storage:/srv/storage:ro
+      - ./public/images:/srv/public/images:ro
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /var/cache/nginx:rw,noexec,nosuid,size=64m
+      - /var/run:rw,noexec,nosuid,size=4m
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3

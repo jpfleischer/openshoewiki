@@ -1,0 +1,98 @@
+# Build the legacy Laravel Mix assets separately so Node and the development
+# dependencies do not end up in the runtime image.
+FROM node:24-bookworm-slim AS frontend
+
+RUN test "$(yarn --version)" = "1.22.22"
+
+WORKDIR /srv
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile --non-interactive
+
+COPY . .
+RUN mkdir -p public/assets \
+	&& NODE_OPTIONS=--openssl-legacy-provider yarn production
+
+
+# PHP-FPM runs the Laravel application. Migrations are deliberately not run
+# from this image's startup command; deploy them explicitly when needed.
+FROM php:8.4-fpm-bookworm AS app
+
+ARG APP_UID=1000
+ARG APP_GID=1000
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		libcurl4-openssl-dev \
+		libicu-dev \
+		libonig-dev \
+		libpq-dev \
+		libxml2-dev \
+		libzip-dev \
+	&& docker-php-ext-install -j"$(nproc)" \
+		bcmath \
+		intl \
+		mbstring \
+		opcache \
+		pdo_pgsql \
+		zip \
+	&& groupmod --gid "${APP_GID}" www-data \
+	&& usermod --uid "${APP_UID}" --gid "${APP_GID}" www-data \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
+WORKDIR /srv
+COPY composer.json composer.lock ./
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
+	--no-dev --no-interaction --prefer-dist --no-progress \
+	--no-scripts --no-autoloader
+
+COPY . .
+
+RUN mkdir -p \
+		/srv/storage/app/public \
+		/srv/storage/framework/cache/data \
+		/srv/storage/framework/sessions \
+		/srv/storage/framework/views \
+		/srv/storage/logs \
+		/srv/bootstrap/cache \
+		/srv/public/images \
+	&& COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload \
+		--no-dev --optimize --no-interaction --no-scripts \
+	&& APP_ENV=production APP_DEBUG=false \
+		APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
+		APP_URL=https://example.invalid \
+		php artisan package:discover --ansi \
+	&& APP_ENV=production APP_DEBUG=false \
+		APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
+		APP_URL=https://example.invalid \
+		php artisan filament:upgrade \
+	&& APP_ENV=production APP_DEBUG=false \
+		APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
+		APP_URL=https://example.invalid \
+		php artisan storage:link \
+	&& chown -R www-data:www-data /srv/storage /srv/bootstrap/cache
+
+COPY --from=frontend /srv/public/assets /srv/public/assets
+
+ENV APP_ENV=production \
+	APP_DEBUG=false \
+	HTTPS_OFF=1
+
+EXPOSE 9000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+	CMD php -r '$f = @fsockopen("127.0.0.1", 9000); exit($f ? 0 : 1);'
+
+CMD ["php-fpm", "-F"]
+
+
+# Only the static web server is exposed to the host reverse proxy. PHP source,
+# Composer dependencies, and environment variables stay in the app container.
+FROM nginx:stable-alpine AS nginx
+
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY nginx.production.conf /etc/nginx/conf.d/openshoewiki.conf
+COPY --from=app /srv/public /srv/public
