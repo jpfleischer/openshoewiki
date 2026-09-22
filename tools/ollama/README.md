@@ -42,13 +42,13 @@ Defaults:
 - Proxy container name: `ollama_proxy`
 - Proxy bind: `11434:8080`
 - Ollama server host: `0.0.0.0:11434`
-- Model: `gemma3:27b`
+- Model: `qwen3.8:27b`
 - GPU device id: `1`
 
 You can override them:
 
 ```sh
-make yep OLLAMA_MODEL=llama3.1:8b OLLAMA_BIND=11434:8080 OLLAMA_HOST=0.0.0.0:11434 OLLAMA_GPU_ID=0
+make yep OLLAMA_BIND=11434:8080 OLLAMA_HOST=0.0.0.0:11434 OLLAMA_GPU_ID=0
 ```
 
 ## Query a Product Page

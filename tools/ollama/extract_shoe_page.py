@@ -16,7 +16,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
-DEFAULT_MODEL = "gemma3:27b"
+DEFAULT_MODEL = "qwen3.8:27b"
 DEFAULT_OLLAMA_URL = "http://localhost:11434/api/generate"
 MAX_TEXT_CHARS = 24000
 
@@ -134,6 +134,7 @@ def call_ollama(model: str, ollama_url: str, prompt: str) -> str:
             "model": model,
             "prompt": prompt,
             "stream": False,
+            "think": False,
             "options": {
                 "temperature": 0.1,
             },
