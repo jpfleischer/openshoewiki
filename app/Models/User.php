@@ -43,11 +43,6 @@ class User extends Authenticatable implements FilamentUser
     public const REGULAR = 0;
     public const BANNED = -1;
 
-    // Legacy aliases retained while older codepaths are migrated off inherited role names.
-    public const SENIOR_LOLIBRARIAN = self::MANAGER;
-    public const LOLIBRARIAN = self::MODERATOR;
-    public const JUNIOR_LOLIBRARIAN = self::EDITOR;
-
     /**
      * Whether or not this model has an incrementing timestamp.
      *

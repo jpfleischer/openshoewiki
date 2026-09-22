@@ -286,7 +286,7 @@ class ItemController extends Controller
         /** @var \App\Models\User $user */
         $user = auth()->user();
         if (! $user->is($item->submitter) && ! $user->manager()) {
-            // require senior to publish other's items.
+            // A manager is required to publish another user's item.
             return back()->withErrors("You cannot publish another user's post with your access level!");
         }
 

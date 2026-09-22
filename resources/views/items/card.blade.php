@@ -58,11 +58,11 @@
     <a class=" btn btn-outline-primary rounded-0" style="border: none;" href="{{ $item->url }}">
         {{ __('ui.item.view') }}
     </a>
-    @senior
+    @manager
     <a class=" btn btn-outline-primary rounded-0" style="border: none;" href="{{ $item->edit_url }}">
         {{ __('ui.item.edit') }}
     </a>
-    @endsenior
+    @endmanager
 
     {{ $slot ?? '' }}
 </div>

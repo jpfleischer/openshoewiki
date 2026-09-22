@@ -56,13 +56,13 @@ class AppServiceProvider extends ServiceProvider
         Blade::if('dev', function () {
             return auth()->check() && auth()->user()->developer();
         });
-        Blade::if('junior', function () {
+        Blade::if('editor', function () {
             return auth()->check() && auth()->user()->editor();
         });
-        Blade::if('lolibrarian', function () {
+        Blade::if('moderator', function () {
             return auth()->check() && auth()->user()->moderator();
         });
-        Blade::if('senior', function () {
+        Blade::if('manager', function () {
             return auth()->check() && auth()->user()->manager();
         });
 

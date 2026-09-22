@@ -23,7 +23,7 @@ class ChangeNewUserDefaultLevelToRegular extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->integer('level')->default(User::JUNIOR_LOLIBRARIAN)->change();
+            $table->integer('level')->default(User::EDITOR)->change();
         });
     }
 }

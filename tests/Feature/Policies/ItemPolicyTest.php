@@ -33,25 +33,25 @@ class ItemPolicyTest extends TestCase
         });
     }
 
-    public function test_junior_users_can_delete_their_drafts()
+    public function test_editors_can_delete_their_drafts()
     {
-        $user = $this->makeUser('junior');
+        $user = $this->makeUser('editor');
         $item = $this->makeItem('draft', ['user_id' => $user->id]);
 
         $this->assertTrue($user->can('delete', $item));
     }
 
-    public function test_junior_users_cannot_delete_other_drafts()
+    public function test_editors_cannot_delete_other_drafts()
     {
-        $user = $this->makeUser('junior');
+        $user = $this->makeUser('editor');
         $item = $this->makeItem('draft', ['user_id' => uuid4()]);
 
         $this->assertFalse($user->can('delete', $item));
     }
 
-    public function test_junior_users_cannot_delete_published_items()
+    public function test_editors_cannot_delete_published_items()
     {
-        $user = $this->makeUser('junior');
+        $user = $this->makeUser('editor');
 
         $item1 = $this->makeItem('published', ['user_id' => $user->id]);
         $item2 = $this->makeItem('published', ['user_id' => uuid4()]);
@@ -75,27 +75,27 @@ class ItemPolicyTest extends TestCase
         $this->assertFalse($user->can('delete', $item4));
     }
 
-    public function test_lolibrarians_can_delete_their_drafts()
+    public function test_moderators_can_delete_their_drafts()
     {
-        $user = $this->makeUser('lolibrarian');
+        $user = $this->makeUser('moderator');
 
         $item1 = $this->makeItem('draft', ['user_id' => $user->id]);
 
         $this->assertTrue($user->can('delete', $item1));
     }
 
-    public function test_lolibrarians_cannot_delete_other_drafts()
+    public function test_moderators_cannot_delete_other_drafts()
     {
-        $user = $this->makeUser('lolibrarian');
+        $user = $this->makeUser('moderator');
 
         $item1 = $this->makeItem('draft', ['user_id' => uuid4()]);
 
         $this->assertFalse($user->can('delete', $item1));
     }
 
-    public function test_lolibrarians_cannot_delete_published_items()
+    public function test_moderators_cannot_delete_published_items()
     {
-        $user = $this->makeUser('lolibrarian');
+        $user = $this->makeUser('moderator');
 
         $item1 = $this->makeItem('published', ['user_id' => $user->id]);
         $item2 = $this->makeItem('published', ['user_id' => uuid4()]);
@@ -104,9 +104,9 @@ class ItemPolicyTest extends TestCase
         $this->assertFalse($user->can('delete', $item2));
     }
 
-    public function test_senior_lolibrarians_can_delete_any_item()
+    public function test_managers_can_delete_any_item()
     {
-        $user = $this->makeUser('senior');
+        $user = $this->makeUser('manager');
 
         $item1 = $this->makeItem('published', ['user_id' => $user->id]);
         $item2 = $this->makeItem('published', ['user_id' => uuid4()]);
@@ -149,9 +149,9 @@ class ItemPolicyTest extends TestCase
         $this->assertTrue($user->can('delete', $item4));
     }
 
-    public function test_lolibrarians_can_delete_items_they_published()
+    public function test_moderators_can_delete_items_they_published()
     {
-        $user = $this->makeUser('lolibrarian');
+        $user = $this->makeUser('moderator');
 
         $item1 = $this->makeItem('published', ['user_id' => $user->id]);
         $item2 = $this->makeItem('published', ['user_id' => uuid4()]);

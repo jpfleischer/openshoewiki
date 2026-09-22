@@ -43,21 +43,6 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function junior()
-    {
-        return $this->editor();
-    }
-
-    public function lolibrarian()
-    {
-        return $this->moderator();
-    }
-
-    public function senior()
-    {
-        return $this->manager();
-    }
-
     public function admin()
     {
         return $this->state([

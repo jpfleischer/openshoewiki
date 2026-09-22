@@ -62,7 +62,7 @@ class ItemPolicy
     public function update(User $user, Item $item)
     {
         if ($item->status === Item::PUBLISHED) {
-            // lolibrarians can update items they themselves published
+            // moderators can update items they themselves published
             if ($item->publisher_id === $user->id) {
                 return $user->moderator();
             }
@@ -71,8 +71,8 @@ class ItemPolicy
         }
 
         // otherwise, this is a draft:
-        // users can update their own drafts if junior.
-        // users can update other people's drafts if senior.
+        // Editors can update their own drafts.
+        // Managers can update other users' drafts.
 
         if ($item->user_id === $user->id) {
             return $user->editor();
@@ -95,21 +95,21 @@ class ItemPolicy
     public function delete(User $user, Item $item)
     {
         if ($item->status === Item::PUBLISHED) {
-            // lolibrarian can delete items they themselves published
+            // moderator can delete items they themselves published
             if ($item->publisher_id === $user->id) {
                 return $user->moderator();
             }
 
-            // senior lolibrarians can delete published items.
+            // managers can delete published items.
             return $user->manager();
         }
 
-        // junior can delete their own drafts.
+        // Editors can delete their own drafts.
         if ($item->user_id === $user->id) {
             return $user->editor();
         }
 
-        // only senior can delete drafts from other people.
+        // Only managers can delete other users' drafts.
         // This is just a separate check so it can be changed easily.
         return $user->manager();
     }
@@ -123,7 +123,7 @@ class ItemPolicy
      */
     public function publish(User $user, Item $item)
     {
-        // must be senior to unpublish, or the original publisher
+        // Managers, or moderators who originally published the item, can unpublish it.
         if ($item->status === Item::PUBLISHED) {
             if ($item->publisher_id === $user->id) {
                 return $user->moderator();
@@ -133,12 +133,12 @@ class ItemPolicy
         }
 
         // otherwise, this is a draft:
-        // users can publish their own drafts if lolibrarian.
+        // users can publish their own drafts if they are a moderator.
         if ($item->user_id === $user->id) {
             return $user->moderator();
         }
 
-        // otherwise senior can publish any draft.
+        // Managers can publish any draft.
         return $user->manager();
     }
 

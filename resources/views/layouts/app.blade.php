@@ -33,9 +33,9 @@
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav mr-auto">
-                    @junior
+                    @editor
                         @include('components.navbar.admin')
-                    @endjunior
+                    @endeditor
                     </ul>
 
                     <ul class="navbar-nav ml-auto">

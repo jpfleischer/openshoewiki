@@ -80,30 +80,6 @@ trait AccessLevels
     }
 
     /**
-     * Legacy alias for editor().
-     */
-    public function junior(): bool
-    {
-        return $this->editor();
-    }
-
-    /**
-     * Legacy alias for moderator().
-     */
-    public function lolibrarian(): bool
-    {
-        return $this->moderator();
-    }
-
-    /**
-     * Legacy alias for manager().
-     */
-    public function senior(): bool
-    {
-        return $this->manager();
-    }
-
-    /**
      * Check a user's access role.
      *
      * @return string
