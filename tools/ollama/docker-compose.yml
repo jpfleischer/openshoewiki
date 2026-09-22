@@ -1,11 +1,13 @@
 services:
   ollama:
-    image: ollama/ollama:0.12.0
+    image: ollama/ollama:0.34.2
     container_name: ${OLLAMA_CONTAINER_NAME:-ollama_container}
     runtime: nvidia
     environment:
       OLLAMA_HOST: ${OLLAMA_HOST:-0.0.0.0:11434}
       NVIDIA_VISIBLE_DEVICES: ${OLLAMA_GPU_ID:-1}
+    volumes:
+      - ollama_models:/root/.ollama
     networks:
       - ollama_net
 
@@ -23,6 +25,10 @@ services:
       - "${OLLAMA_BIND:-11434:8080}"
     networks:
       - ollama_net
+
+volumes:
+  ollama_models:
+    name: openshoewiki_ollama_models
 
 networks:
   ollama_net:
