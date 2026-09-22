@@ -2,7 +2,7 @@ const DEFAULT_SETTINGS = {
   baseUrl: "",
   username: "",
   password: "",
-  model: "qwen2.5:32b"
+  model: "qwen3.8:27b"
 };
 
 const EXTRACTION_PROMPT = [
@@ -74,6 +74,13 @@ function applySettingsToForm(settings) {
 
 async function loadSettings() {
   const stored = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+
+  // Migrate the former built-in default without overwriting a custom model.
+  if (stored.model === "qwen2.5:32b") {
+    stored.model = DEFAULT_SETTINGS.model;
+    await chrome.storage.sync.set({ model: DEFAULT_SETTINGS.model });
+  }
+
   applySettingsToForm(stored);
 }
 
@@ -136,6 +143,7 @@ async function requestGeneration(settings, prompt) {
       prompt,
       format: "json",
       stream: false,
+      think: false,
       options: {
         temperature: 0
       }
@@ -512,7 +520,9 @@ function buildNormalizedResponse(pageData, modelData) {
       pageData.signals.productName,
       modelData?.product_name,
       modelData?.["Product Name"],
-      modelData?.name
+      modelData?.name,
+      pageData.signals.ogTitle,
+      pageData.signals.title
     ),
     brand: inferBrand(pageData, modelData),
     product_type: inferProductType(pageData, modelData),
@@ -647,6 +657,36 @@ async function extractPageData(tabId) {
           });
       }
 
+      function findProductObject(input) {
+        if (Array.isArray(input)) {
+          for (const value of input) {
+            const found = findProductObject(value);
+            if (found) {
+              return found;
+            }
+          }
+          return null;
+        }
+
+        if (!input || typeof input !== "object") {
+          return null;
+        }
+
+        const types = Array.isArray(input["@type"]) ? input["@type"] : [input["@type"]];
+        if (types.some((type) => typeof type === "string" && type.split(/[\/#]/).pop().toLowerCase() === "product")) {
+          return input;
+        }
+
+        for (const value of Object.values(input)) {
+          const found = findProductObject(value);
+          if (found) {
+            return found;
+          }
+        }
+
+        return null;
+      }
+
       function findValueDeep(input, matcher) {
         if (Array.isArray(input)) {
           for (const value of input) {
@@ -727,6 +767,12 @@ async function extractPageData(tabId) {
       const meta = (selector) => document.querySelector(selector)?.getAttribute("content") || null;
       const jsonLdObjects = extractJsonLdObjects();
       const jsonLd = stringifyJsonLdSummary(jsonLdObjects);
+      const jsonLdProduct = findProductObject(jsonLdObjects);
+      const jsonLdProductName = typeof jsonLdProduct?.name === "string" ? jsonLdProduct.name : null;
+      const productBrandValue = jsonLdProduct?.brand;
+      const jsonLdProductBrand = (Array.isArray(productBrandValue) ? productBrandValue : [productBrandValue])
+        .map((value) => (typeof value === "string" ? value : value?.name))
+        .find((value) => typeof value === "string" && value.trim()) || null;
 
       const productDataMatch = document.documentElement.innerHTML.match(/"productName"\s*:\s*"([^"]+)"/i);
       const brandMatch = document.documentElement.innerHTML.match(/"brand"\s*:\s*"([^"]+)"/i);
@@ -755,8 +801,8 @@ async function extractPageData(tabId) {
           description: meta('meta[name="description"]'),
           canonical: document.querySelector('link[rel="canonical"]')?.href || null,
           twitterImageAlt: meta('meta[name="twitter:image:alt"]'),
-          productName: productDataMatch ? productDataMatch[1] : null,
-          brand: brandMatch ? brandMatch[1] : jsonLdBrand || titleBrand,
+          productName: jsonLdProductName || (productDataMatch ? productDataMatch[1] : null),
+          brand: jsonLdProductBrand || (brandMatch ? brandMatch[1] : jsonLdBrand || titleBrand),
           sku: skuMatch ? skuMatch[1] : null,
           price: priceMatch ? `${currencyMatch ? `${currencyMatch[1]} ` : ""}${priceMatch[1]}` : null,
           productType: jsonLdCategory || null,
