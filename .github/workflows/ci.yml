@@ -52,3 +52,8 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Build PHP application image
+        run: docker build --file Dockerfile.production --target app --tag openshoewiki-ci:app .
+
+      - name: Build Nginx image
+        run: docker build --file Dockerfile.production --target nginx --tag openshoewiki-ci:nginx .
